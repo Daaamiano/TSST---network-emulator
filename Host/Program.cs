@@ -9,13 +9,14 @@ namespace Host
     {
 
         private static Socket _clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
         static void Main(string[] args)
         {
             Console.Title = "Client";
-            Console.Read();
+            LoopConnect();
             SendLoop();
+            Console.ReadLine();
         }
+
 
         private static void SendLoop()
         {
@@ -26,8 +27,12 @@ namespace Host
                 byte[] buffer = Encoding.ASCII.GetBytes(req);
                 _clientSocket.Send(buffer);
 
+                //byte[] receivedBuf = new byte[1];
+                //int rec = _clientSocket.Receive(receivedBuf);
+                //byte[] data = new byte[rec];
+                //Array.Copy(receivedBuf, data, rec);
+                //Console.WriteLine("Received: " + Encoding.ASCII.GetString(data));
             }
-
         }
         private static void LoopConnect()
         {
@@ -39,16 +44,17 @@ namespace Host
                 {
                     attempts++;
                     _clientSocket.Connect(IPAddress.Loopback, 100);
+                    
                 }
                 catch (SocketException)
                 {
                     Console.Clear();
                     Console.WriteLine("Connect attempts: " + attempts.ToString());
+                    Console.WriteLine("IPAddress.Loopback: " + IPAddress.Loopback);
                 }
             }
             Console.Clear();
             Console.WriteLine("Connected");
         }
     }
-
 }

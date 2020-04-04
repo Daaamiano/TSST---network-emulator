@@ -4,9 +4,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Router
+namespace MultiServer
 {
-
     class Program
     {
         private static readonly Socket serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
@@ -19,9 +18,10 @@ namespace Router
         {
             Console.Title = "Server";
             SetupServer();
-            Console.ReadLine();
+            Console.ReadLine(); // When we press enter close everything
             CloseAllSockets();
         }
+
         private static void SetupServer()
         {
             Console.WriteLine("Setting up server...");
@@ -30,6 +30,7 @@ namespace Router
             serverSocket.BeginAccept(AcceptCallback, null);
             Console.WriteLine("Server setup complete");
         }
+
         private static void CloseAllSockets()
         {
             foreach (Socket socket in clientSockets)
@@ -40,6 +41,7 @@ namespace Router
 
             serverSocket.Close();
         }
+
         private static void AcceptCallback(IAsyncResult AR)
         {
             Socket socket;
@@ -58,6 +60,7 @@ namespace Router
             Console.WriteLine("Client connected, waiting for request...");
             serverSocket.BeginAccept(AcceptCallback, null);
         }
+
         private static void ReceiveCallback(IAsyncResult AR)
         {
             Socket current = (Socket)AR.AsyncState;
@@ -70,6 +73,7 @@ namespace Router
             catch (SocketException)
             {
                 Console.WriteLine("Client forcefully disconnected");
+                // Don't shutdown because the socket may be disposed and its disconnected anyway.
                 current.Close();
                 clientSockets.Remove(current);
                 return;
@@ -79,6 +83,11 @@ namespace Router
             Array.Copy(buffer, recBuf, received);
             string text = Encoding.ASCII.GetString(recBuf);
             Console.WriteLine("Received Text: " + text);
+
+            byte[] data = Encoding.ASCII.GetBytes("Text delivered");
+            current.Send(data);
+
+            
             current.BeginReceive(buffer, 0, BUFFER_SIZE, SocketFlags.None, ReceiveCallback, current);
         }
     }
