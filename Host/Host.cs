@@ -5,12 +5,8 @@ using System.Text;
 
 namespace Host
 {
-    class Program
+    class Host
     {
-        static void Main(string[] args)
-        {
-           
-        }
-    }
 
+    }  
 }
