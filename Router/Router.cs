@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using DataStructures;
 
 namespace Router
 {
@@ -16,17 +15,27 @@ namespace Router
         private int cloudPort;
         private IPAddress managementSystemAddress;
         private int managementSystemPort;
-        private Socket receiverSocket;      // odpowiedzialny za ruch przychodzący
-        private Socket senderSocket;        // odpowiedzialny za ruch wychodzący
+        private Socket managementSystemSocket;      // odpowiedzialny za ruch przychodzący
+        private Socket cloudSocket;        // odpowiedzialny za ruch wychodzący
+        private static MplsFibTable mplsFibTable;
+        private static IpFibTable ipFibTable;
+        private static IlmTable ilmTable;
+        private static FtnTable ftnTable;
+        private static NhlfeTable nhlfeTable;
 
-        public Router(string configFilePath) 
+        public Router(string routerConfigFilePath, string tablesConfigFilePath) 
         {
-            loadPropertiesFromFile(configFilePath);
-
+            LoadPropertiesFromFile(routerConfigFilePath);
+            mplsFibTable = new MplsFibTable(tablesConfigFilePath);          //
+            ilmTable = new IlmTable(tablesConfigFilePath);                  //ładowanie tablic
+            ftnTable = new FtnTable(tablesConfigFilePath);                  //
+            ipFibTable = new IpFibTable(tablesConfigFilePath);              //
+            nhlfeTable = new NhlfeTable(tablesConfigFilePath);
         }
 
-        private void loadPropertiesFromFile(string configFilePath)
+        private void LoadPropertiesFromFile(string configFilePath)
         {
+            /*
             var file = File.ReadAllLines(configFilePath).ToList();
 
             routerName = GetProperty(file, "routerName");
@@ -35,6 +44,8 @@ namespace Router
             cloudPort = ushort.Parse(GetProperty(file, "cloudPort"));
             managementSystemAddress = IPAddress.Parse(GetProperty(file, "managementAddress"));
             managementSystemPort = int.Parse(GetProperty(file, "managementPort"));
+            */
+
         }
 
         private string GetProperty(List<string> content, string propertyName)
@@ -42,9 +53,27 @@ namespace Router
             return content.Find(line => line.StartsWith(propertyName)).Replace($"{propertyName} ", "");
         }
 
-        public void Listen() { }
+        private void ConnectToCloud()
+        {
+            
+        }
 
-        public void Read() { }
+        private void ConnectToManagementSystem()
+        {
+            managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            
+        }
+
+        public void Listen() 
+        {
+            
+
+        }
+
+        public void Read()
+        {
+
+        }
 
         public bool Send() 
         {
@@ -55,8 +84,5 @@ namespace Router
         {
             return true;
         }
-        
-        
-
     }
 }
