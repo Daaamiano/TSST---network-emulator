@@ -1,46 +1,59 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 
 namespace ManagementSystem
 {
     class ManagementSystem
     {
-        private Socket managmentSystemSocket;
-        private static readonly byte[] buffer = new byte[BUFFER_SIZE];
+        private static Socket RouterSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
         public ManagementSystem()
         {
-
+            Console.Title = "ManagmentSystem";
+            LoopConnect();
+            SendLoop();
+            Console.ReadLine();
         }
 
-        private void ListenForConnections()
+        private static void SendLoop()
         {
-            Console.WriteLine("Setting up MS...");
-            managmentSystemSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            managmentSystemSocket.Bind(new IPEndPoint.Any, 5000);
-            managmentSystemSocket.Listen(0);
-            managmentSystemSocket.BeginAccept(AcceptCallback, null);
-            Console.WriteLine("MS setup complete");
+            while (true)                        //pętla wysyłająca i odbierająca. Po wysłaniu od razu czeka na odpowiedź
+            {
+                Console.Write("Enter a request: ");
+                string req = Console.ReadLine();
+                byte[] buffer = Encoding.ASCII.GetBytes(req);
+                RouterSocket.Send(buffer);
 
+                byte[] receivedBuf = new byte[1024];
+                int rec = RouterSocket.Receive(receivedBuf);
+                byte[] data = new byte[rec];
+                Array.Copy(receivedBuf, data, rec);
+                Console.WriteLine("Received: " + Encoding.ASCII.GetString(data));
+            }
         }
-        private static void AcceptCallback(IAsyncResult AR)
+        private static void LoopConnect()           //pętla sprawdzająca połączenie pomiędzy MS a Routerem
         {
-            Socket socket;
+            int attempts = 0;
 
-            try
+            while (!RouterSocket.Connected)
             {
-                socket = serverSocket.EndAccept(AR);
+                try
+                {
+                    attempts++;
+                    RouterSocket.Connect(IPAddress.Loopback, 5000);
+                }
+                catch (SocketException)
+                {
+                    Console.Clear();
+                    Console.WriteLine("Connect attempts: " + attempts.ToString());
+                }
             }
-            catch (ObjectDisposedException) 
-            {
-                return;
-            }
-
-            managmentSystemSocket.Add(socket);
-            socket.BeginReceive(buffer, 0, BUFFER_SIZE, SocketFlags.None, ReceiveCallback, socket);
-            Console.WriteLine("Client connected, waiting for request...");
-            managmentSystemSocket.BeginAccept(AcceptCallback, null);
+            Console.Clear();
+            Console.WriteLine("Connected");
         }
+
     }
 }
