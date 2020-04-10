@@ -8,11 +8,10 @@ namespace Router
 {
     class Program
     {
-        public Router router;
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
-           Router router = new Router("XD","XDD");
-            
+            Router router = new Router();
+            router.Start(); 
          }
 
     }
