@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -29,30 +28,62 @@ namespace Host
         {
             Console.Title = "Host";
             StartHost();
-            Console.ReadLine();
         }
 
         public static void StartHost()
         {
-            try
+            Socket hostSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            hostSocket.BeginConnect(new IPEndPoint(ipAddress, cableCloudPort),
+                new AsyncCallback(ConnectionCallBack), hostSocket);
+            bool correctChoice = false;
+            while(correctChoice == false)
             {
-                Socket hostSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                hostSocket.BeginConnect(new IPEndPoint(ipAddress, cableCloudPort), 
-                    new AsyncCallback(ConnectionCallBack), hostSocket);
-                Send(hostSocket, $"Test taki o se {DateTime.Now} <EOF>");
-                sendCompleted.WaitOne();
+                Console.WriteLine("What would you like to do?");
+                Console.WriteLine("Write '1'  if you want to send the message to cable cloud ");
+                Console.WriteLine("Write '2'  if you want to wait for the message from cable cloud ");
+                int decision = int.Parse(Console.ReadLine());
 
-                Receive(hostSocket);
-                receiveCompleted.WaitOne();
-                Console.WriteLine($"Response received {response}");
-                hostSocket.Shutdown(SocketShutdown.Both);
-                hostSocket.Close();
+                if (decision == 1)
+                {
+                    try
+                    {
+                        correctChoice = true;
+                        Console.WriteLine("Choose which host you want to send the package to");
+                        Console.WriteLine("To do this, write the destination port belonging to the destination host ");
+                        string destinationPort = Console.ReadLine();
+                        Send(hostSocket, $"Test taki o se {DateTime.Now} port docelowy to {destinationPort} <EOF>"); // pomysl na wysylanie pakietu !!!!
+                        sendCompleted.WaitOne();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+                else if (decision == 2)
+                {
+                    try
+                    {
+                        correctChoice = true;
+                        Receive(hostSocket);
+                        receiveCompleted.WaitOne();
+                        Console.WriteLine($"Response received {response}");
+                        hostSocket.Shutdown(SocketShutdown.Both);
+                        hostSocket.Close();
 
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+                else
+                {
+                    correctChoice = false;
+                    Console.WriteLine("You wrote something other than '1' or '2' ");
+                    Console.WriteLine("Please try again: ");
+                }
             }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
+            
         }
 
         private static void Receive(Socket hostSocket)
@@ -120,7 +151,7 @@ namespace Host
             {
                 Socket hostSocket = (Socket) ar.AsyncState;
                 hostSocket.EndConnect(ar);
-                Console.WriteLine($"Socket connection : {hostSocket.RemoteEndPoint.ToString()}");
+                Console.WriteLine("Host connected to cable cloud");
                 connectCompleted.Set();
             }
             catch (Exception e)
@@ -134,5 +165,3 @@ namespace Host
 
 // w jaki sposob pakujemy pakiet? - json? czy string z portem docelowym i wiadomoscia oddzielny np. srednikiem - potem cablecloud sobie odczyta to
 // SocketFlags - moze do tworzenia oakietu (rozne ifnromacje tam schowac) ????
-// The program '[19332] Host.dll' has exited with code -1 (0xffffffff). - o co chodzi???
-// czy .net core 3.1 jest na pewno git? - czy zabiera jakies funkcje; czy nie lepsze framework jak komandos sugerowal ?
