@@ -10,7 +10,7 @@ namespace Host
     {
         static void Main(string[] args)
         {
-            Host host = new Host();   
+            Host host = new Host(@"C:\Users\Daniel\source\repos\TSST_20L\Host\host1.txt");   
         }
 
     }
