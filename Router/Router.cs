@@ -13,41 +13,28 @@ namespace Router
     class Router
     {
         private static byte[] buffer = new byte[2048];
-        private const int PORT = 5000;
         private static Socket managementSystemSocket;
 
         public string routerName;
         private IPAddress ipAddress;        // adres IP danego routera
         private IPAddress cloudAddress;
         private int cloudPort;
-        private IPAddress managementSystemAddress = IPAddress.Parse("127.0.0.1");
-        private int managementSystemPort = 5000;
-        
-        private Socket cloudSocket;  
-        private static MplsFibTable mplsFibTable;
-        private static IpFibTable ipFibTable;
-        private static IlmTable ilmTable;
-        private static FtnTable ftnTable;
-        private static NhlfeTable nhlfeTable;
+        private IPAddress managementSystemAddress;
+        private int managementSystemPort;
+
+        private Socket cloudSocket;
+        private MplsFibTable mplsFibTable;
+        private IpFibTable ipFibTable;
+        private IlmTable ilmTable;
+        private FtnTable ftnTable;
+        private NhlfeTable nhlfeTable;
 
         private ManualResetEvent connectDone = new ManualResetEvent(false);
 
-        // do testów
-        public Router()
-        {
-            Console.Title = "Router";
-            //Console.ReadLine();
-        }
-
-        public Router(string routerConfigFilePath, string tablesConfigFilePath) 
+        public Router(string routerConfigFilePath, string tablesConfigFilePath)
         {
             LoadPropertiesFromFile(routerConfigFilePath);
-            mplsFibTable = new MplsFibTable(tablesConfigFilePath);          
-            ilmTable = new IlmTable(tablesConfigFilePath);                  
-            ftnTable = new FtnTable(tablesConfigFilePath);                  
-            ipFibTable = new IpFibTable(tablesConfigFilePath);             
-            nhlfeTable = new NhlfeTable(tablesConfigFilePath);
-
+            LoadTablesFromFile(tablesConfigFilePath);
             Console.Title = "Router";
             //Console.ReadLine();
         }
@@ -56,6 +43,7 @@ namespace Router
         {
             managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ConnectToManagementSystem();
+
         }
 
         private void ConnectToManagementSystem()
@@ -112,8 +100,8 @@ namespace Router
                     if (message.Contains("HELLO"))
                     {
                         Console.WriteLine("Estabilished connection with MS");
-                        Console.ReadLine();
-
+                        //Console.ReadLine();
+                        Receivemessages();
                         break;
                     }
                 }
@@ -122,6 +110,18 @@ namespace Router
                     Console.WriteLine("Couldn't connect to MS!");
                 }
             }
+        }
+
+        private void Receivemessages()
+        {
+            while (true)
+            {
+                byte[] buffer = new byte[256];
+                int bytes = managementSystemSocket.Receive(buffer);
+                var message = Encoding.ASCII.GetString(buffer, 0, bytes);
+                Console.WriteLine(message);
+            }
+
         }
 
         private void ConnectCallback(IAsyncResult ar)
@@ -148,27 +148,40 @@ namespace Router
 
         private void LoadPropertiesFromFile(string configFilePath)
         {
-            /*
-            var file = File.ReadAllLines(configFilePath).ToList();
-
-            routerName = GetProperty(file, "routerName");
-            ipAddress = IPAddress.Parse(GetProperty(file, "ipAddress"));
-            cloudAddress = IPAddress.Parse(GetProperty(file, "cloudAddress"));
-            cloudPort = ushort.Parse(GetProperty(file, "cloudPort"));
-            managementSystemAddress = IPAddress.Parse(GetProperty(file, "managementAddress"));
-            managementSystemPort = int.Parse(GetProperty(file, "managementPort"));
-            */
+            var properties = new Dictionary<string, string>();
+            foreach (var row in File.ReadAllLines(configFilePath))
+            {
+                properties.Add(row.Split('=')[0], row.Split('=')[1]);
+            }
+            routerName = properties["ROUTERNAME"];
+            ipAddress = IPAddress.Parse(properties["IPADDRESS"]);
+            managementSystemAddress = IPAddress.Parse(properties["MANAGEMENTSYSTEMADDRESS"]);
+            cloudAddress = IPAddress.Parse(properties["CLOUDADDRESS"]);
+            managementSystemPort = int.Parse(properties["MANAGEMENTSYSTEMPORT"]);
+            cloudPort = int.Parse(properties["CLOUDPORT"]);
         }
-        /*
-        private string GetProperty(List<string> content, string propertyName)
-        {
-            return content.Find(line => line.StartsWith(propertyName)).Replace($"{propertyName} ", "");
-        }
-        */
 
-        public void Listen() 
+        private void LoadTablesFromFile(string tablesFilePath)
         {
-            
+            // Router LSR nie potrzebuje wszystkich tablic. W naszej topologii tylko R2 jest LSR.
+            if (routerName != "R2")
+            {
+                mplsFibTable = new MplsFibTable(tablesFilePath, routerName);
+                ipFibTable = new IpFibTable(tablesFilePath, routerName);
+                nhlfeTable = new NhlfeTable(tablesFilePath, routerName);
+                ftnTable = new FtnTable(tablesFilePath, routerName);
+                ilmTable = new IlmTable(tablesFilePath, routerName);
+            }
+            else
+            {
+                nhlfeTable = new NhlfeTable(tablesFilePath, routerName);
+                ilmTable = new IlmTable(tablesFilePath, routerName);
+            }
+        }
+
+        public void Listen()
+        {
+
 
         }
 
@@ -177,7 +190,7 @@ namespace Router
 
         }
 
-        public bool Send() 
+        public bool Send()
         {
             return true;
         }
