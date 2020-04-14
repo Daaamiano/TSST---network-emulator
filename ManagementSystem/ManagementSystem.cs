@@ -110,6 +110,20 @@ namespace ManagementSystem
             new AsyncCallback(SendCallback), handler);
         }
 
+        private void SendMessege(Socket handler)
+        {
+
+
+            Console.WriteLine("Type a message: ");
+            string message = Console.ReadLine();
+
+            byte[] byteData = Encoding.ASCII.GetBytes(message);
+            handler.BeginSend(byteData, 0, byteData.Length, 0,
+                new AsyncCallback(SendCallback), handler);
+
+
+        }
+
         private void SendCallback(IAsyncResult ar)
         {
             try
@@ -120,9 +134,10 @@ namespace ManagementSystem
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
                 Console.WriteLine("Sent {0} bytes to client.", bytesSent);
+                //handler.Shutdown(SocketShutdown.Both);
+                // handler.Close();
+                SendMessege(handler);
 
-                handler.Shutdown(SocketShutdown.Both);
-                handler.Close();
 
             }
             catch (Exception e)

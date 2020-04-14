@@ -1,19 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using System.IO;
 
 namespace DataStructures
 {
     public class IpFibTable
     {
-        public IpFibTable(string configFilePath) 
-        {
+        // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę, a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
+        Dictionary<string, IpFibEntry> entries = new Dictionary<string, IpFibEntry>();
 
+        public IpFibTable(string configFilePath, string routerName)
+        {
+            string rowName = routerName + "_IPFIB";
+            LoadTableFromFile(configFilePath, rowName);
         }
 
-        private void LoadTableFromFile(string configFilePath)
+        private void LoadTableFromFile(string configFilePath, string rowName)
         {
-
+            foreach (var row in File.ReadAllLines(configFilePath))
+            {
+                var splitRow = row.Split(", ");
+                if (splitRow[0] != rowName)
+                {
+                    continue;
+                }
+                var entry = new IpFibEntry(int.Parse(splitRow[2]));
+                entries.Add(splitRow[1], entry);
+            }
         }
     }
 }
