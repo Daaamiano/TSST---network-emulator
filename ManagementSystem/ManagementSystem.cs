@@ -94,43 +94,56 @@ namespace ManagementSystem
 
             state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
             var content = state.sb.ToString();
-            Console.WriteLine($"Message received: {content}");
-
-            // Send response message.
-            SendResponse(handler, content);
-
+            if (content == "HELLO")
+            {
+                // Send response message.
+                Console.WriteLine("Received HELLO.");
+                SendResponse(handler, content);
+            }
+            else
+            {
+                Console.WriteLine($"Message received: {content}");
+                SendMessage(handler);
+            }
+            state.sb.Clear();
+            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                new AsyncCallback(ReadCallback), state);
         }
 
         private void SendResponse(Socket handler, String data)
         {
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
-            //byte[] responseMessage = Encoding.ASCII.GetBytes("HELLO");
-            //handler.Send(responseMessage);
-            handler.BeginSend(byteData, 0, byteData.Length, 0,
-            new AsyncCallback(SendCallback), handler);
+            //byte[] byteData = Encoding.ASCII.GetBytes(data);
+            byte[] responseMessage = Encoding.ASCII.GetBytes(data);
+            handler.Send(responseMessage);
+            SendMessage(handler);
+            //handler.BeginSend(byteData, 0, byteData.Length, 0,
+            //new AsyncCallback(SendCallback), handler);
         }
 
         private void SendMessage(Socket handler)
         {
-            try
-            {
-                Console.WriteLine("Type a message: ");
-                string message = Console.ReadLine();
+            
+                try
+                {
+                    Console.WriteLine("Type a message: ");
+                    string message = Console.ReadLine();
 
-                List<int> testLabels = new List<int> { 1, 2, 3, 4 };
-                Package package = new Package(ipAddress.ToString(), port, testLabels, message);
-                string json = SerializeToJson(package);
+                    List<int> testLabels = new List<int> { 1, 2, 3, 4 };
+                    Package package = new Package(ipAddress.ToString(), port, testLabels, message);
+                    string json = SerializeToJson(package);
 
-                byte[] byteData = Encoding.ASCII.GetBytes(json);
-                handler.BeginSend(byteData, 0, byteData.Length, 0,
-                    new AsyncCallback(SendCallback), handler);
-            }
-            catch
-            {
-                Console.WriteLine("Connection with Routerrro is booomerrrro");
-               // msSocket.Shutdown(SocketShutdown.Both);
-                //ListenForConnections();
-            }
+                    byte[] byteData = Encoding.ASCII.GetBytes(json);
+                    //handler.BeginSend(byteData, 0, byteData.Length, 0,
+                    //   new AsyncCallback(SendCallback), handler);
+                    handler.Send(byteData);
+                }
+                catch
+                {
+                    Console.WriteLine("Connection with Routerrro is booomerrrro");
+                    // msSocket.Shutdown(SocketShutdown.Both);
+                    //ListenForConnections();
+                }
+            
         }
         public string SerializeToJson(Package package)
         {
