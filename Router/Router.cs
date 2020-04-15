@@ -7,21 +7,13 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using DataStructures;
 
 namespace Router
 {
-    class StateObject
-    {
-        public Socket workSocket = null;
-        public const int BufferSize = 1024;
-        public byte[] buffer = new byte[BufferSize];
-        public StringBuilder sb = new StringBuilder();
-    }
-
     class Router
     {
-        private byte[] buffer = new byte[2048];
         private Socket managementSystemSocket;
         private Socket cableCloudSocket;
 
@@ -38,8 +30,6 @@ namespace Router
         private IlmTable ilmTable;
         private FtnTable ftnTable;
         private NhlfeTable nhlfeTable;
-
-        private ManualResetEvent connectDone = new ManualResetEvent(false);
 
         public Router(string routerConfigFilePath, string tablesConfigFilePath)
         {
@@ -58,7 +48,6 @@ namespace Router
 
         public void Start()
         {
-            managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             cableCloudSocket = new Socket(cloudAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ConnectToManagementSystem();
         }
@@ -69,26 +58,18 @@ namespace Router
             while (true)
             {
                 //managementSystemSocket.ReceiveTimeout = 20000;
-
+                managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
-                    var result = managementSystemSocket.BeginConnect(new IPEndPoint(managementSystemAddress, managementSystemPort), null, null);
-
-                    bool success = result.AsyncWaitHandle.WaitOne(5000, true);
-                    if (success)
-                    {
-                        managementSystemSocket.EndConnect(result);
-                    }
-                    else
-                    {
-                        managementSystemSocket.Close();
-                        Console.WriteLine("Connection to MS not established - timeout...");
-                        continue;
-                    }
+                    managementSystemSocket.Connect(new IPEndPoint(managementSystemAddress, managementSystemPort));
+                   
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Retrying...");
+                    Console.WriteLine("Couldn't connect to management system.");
+                    Console.WriteLine("Reconnecting...");
+                    Thread.Sleep(5000);
+                    continue;
                 }
 
                 try
@@ -104,14 +85,13 @@ namespace Router
                     if (message.Contains("HELLO"))
                     {
                         Console.WriteLine("Estabilished connection with MS");
-                        //Console.ReadLine();
                         ReceiveMessages();
                         break;
                     }
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Couldn't connect to MS!");
+                    Console.WriteLine("Couldn't send hello to management system.");
                 }
             }
         }
@@ -126,7 +106,7 @@ namespace Router
                 Console.WriteLine(message);
             }
         }
-
+        /*
         private void ConnectCallback(IAsyncResult ar)
         {
             try
@@ -148,7 +128,7 @@ namespace Router
                 Console.WriteLine(e.ToString());
             }
         }
-
+        */
         private void LoadPropertiesFromFile(string configFilePath)
         {
             var properties = new Dictionary<string, string>();
