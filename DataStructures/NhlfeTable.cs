@@ -13,6 +13,14 @@ namespace DataStructures
         {
             string rowName = routerName + "_NHLFE";
             LoadTableFromFile(configFilePath, rowName);
+            //test
+            /*
+            Console.WriteLine("NHLFE {0}:", routerName);
+            foreach (var entry in entries)
+            {
+                Console.WriteLine(entry.Value.operation);
+            }
+            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)

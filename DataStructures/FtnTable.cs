@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -13,6 +14,14 @@ namespace DataStructures
         {
             string rowName = routerName + "_FTN";
             LoadTableFromFile(configFilePath, rowName);
+            //testy
+            /*
+            Console.WriteLine("FTN {0}:", routerName);
+            foreach (var entry in entries)
+            {
+                Console.WriteLine(entry.Value.id);
+            }
+            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)
@@ -25,8 +34,7 @@ namespace DataStructures
                     continue;
                 }
                 var entry = new FtnEntry(int.Parse(splitRow[2]));
-                entries.Add(int.Parse(splitRow[1]), entry);
-                
+                entries.Add(int.Parse(splitRow[1]), entry);  
             }
         }
     }

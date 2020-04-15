@@ -5,15 +5,25 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using DataStructures;
 
 namespace Router
 {
+    class StateObject
+    {
+        public Socket workSocket = null;
+        public const int BufferSize = 1024;
+        public byte[] buffer = new byte[BufferSize];
+        public StringBuilder sb = new StringBuilder();
+    }
+
     class Router
     {
-        private static byte[] buffer = new byte[2048];
-        private static Socket managementSystemSocket;
+        private byte[] buffer = new byte[2048];
+        private Socket managementSystemSocket;
+        private Socket cableCloudSocket;
 
         public string routerName;
         private IPAddress ipAddress;        // adres IP danego routera
@@ -36,35 +46,29 @@ namespace Router
             LoadPropertiesFromFile(routerConfigFilePath);
             LoadTablesFromFile(tablesConfigFilePath);
             Console.Title = "Router";
+            //test
+            /*
+            List<int> testLabels = new List<int> { 1, 2, 3, 4 };
+            Package testPackage = new Package(managementSystemAddress.ToString(), managementSystemPort, testLabels, "Dupcia Damiana");
+            string json = SerializeToJson(testPackage);
+            testPackage = DeserializeFromJson(json);
+            */
             //Console.ReadLine();
         }
 
         public void Start()
         {
             managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            cableCloudSocket = new Socket(cloudAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ConnectToManagementSystem();
-
         }
 
         private void ConnectToManagementSystem()
         {
             Console.WriteLine("Connecting to management system...");
-            /*try
-            {
-                // Connect to the remote endpoint.  
-                managementSystemSocket.BeginConnect(new IPEndPoint(managementSystemAddress, managementSystemPort),
-                    new AsyncCallback(ConnectCallback), managementSystemSocket);
-                connectDone.WaitOne();
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-            */
             while (true)
             {
-                managementSystemSocket.ReceiveTimeout = 20000;
+                //managementSystemSocket.ReceiveTimeout = 20000;
 
                 try
                 {
@@ -101,7 +105,7 @@ namespace Router
                     {
                         Console.WriteLine("Estabilished connection with MS");
                         //Console.ReadLine();
-                        Receivemessages();
+                        ReceiveMessages();
                         break;
                     }
                 }
@@ -112,7 +116,7 @@ namespace Router
             }
         }
 
-        private void Receivemessages()
+        private void ReceiveMessages()
         {
             while (true)
             {
@@ -121,7 +125,6 @@ namespace Router
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
                 Console.WriteLine(message);
             }
-
         }
 
         private void ConnectCallback(IAsyncResult ar)
@@ -179,15 +182,40 @@ namespace Router
             }
         }
 
-        public void Listen()
+        public string SerializeToJson(Package package)
         {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
 
-
+            return jsonString;
         }
 
-        public void Read()
+        public Package DeserializeFromJson(string serializedString)
         {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
+        }
 
+        public void PushLabel(Package package, int label)
+        {
+            package.labels.Add(label);
+        }
+
+        public void PopLabel(Package package)
+        {
+            if (package.labels.Any())
+            {
+                package.labels.RemoveAt(package.labels.Count - 1);
+            }
+            else
+            {
+                Console.WriteLine("Próba zdjęcia etykiety z pustej listy etykiet.");
+            }
         }
 
         public bool Send()

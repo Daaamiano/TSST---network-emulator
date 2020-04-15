@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
+using DataStructures;
 
 namespace ManagementSystem
 {
@@ -21,7 +23,7 @@ namespace ManagementSystem
         private int port = 5000;
         private IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
         private ManualResetEvent allDone = new ManualResetEvent(false);
-
+       
         public ManagementSystem()
         {
             Console.Title = "ManagementSystem";
@@ -112,16 +114,34 @@ namespace ManagementSystem
 
         private void SendMessege(Socket handler)
         {
-
-
             Console.WriteLine("Type a message: ");
             string message = Console.ReadLine();
 
-            byte[] byteData = Encoding.ASCII.GetBytes(message);
+            List<int> testLabels = new List<int> { 1, 2, 3, 4 };
+            Package package = new Package(ipAddress.ToString(), port, testLabels, message);
+            string json = SerializeToJson(package);
+
+            byte[] byteData = Encoding.ASCII.GetBytes(json);
             handler.BeginSend(byteData, 0, byteData.Length, 0,
                 new AsyncCallback(SendCallback), handler);
+        }
+        public string SerializeToJson(Package package)
+        {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
 
+            return jsonString;
+        }
 
+        public Package DeserializeFromJson(string serializedString)
+        {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
         }
 
         private void SendCallback(IAsyncResult ar)
