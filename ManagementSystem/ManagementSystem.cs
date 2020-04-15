@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
+using DataStructures;
 
 namespace ManagementSystem
 {
@@ -21,22 +23,22 @@ namespace ManagementSystem
         private int port = 5000;
         private IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
         private ManualResetEvent allDone = new ManualResetEvent(false);
-
+       
         public ManagementSystem()
         {
             Console.Title = "ManagementSystem";
-            //Console.ReadLine();
         }
 
         public void Start()
         {
-            msSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            //msSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ListenForConnections();
         }
 
         private void ListenForConnections()
         {
             Console.WriteLine("Awaiting connection...");
+            msSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
                 msSocket.Bind(new IPEndPoint(ipAddress, port));
@@ -52,8 +54,6 @@ namespace ManagementSystem
             {
                 Console.WriteLine(e.ToString());
             }
-
-            Console.WriteLine("Closing the listener...");
         }
 
         private void AcceptCallback(IAsyncResult ar)
@@ -94,34 +94,74 @@ namespace ManagementSystem
 
             state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, bytesRead));
             var content = state.sb.ToString();
-            Console.WriteLine($"Message received: {content}");
-
-            // Send response message.
-            SendResponse(handler, content);
-
+            if (content == "HELLO")
+            {
+                // Send response message.
+                Console.WriteLine("Received HELLO.");
+                SendResponse(handler, content);
+            }
+            else
+            {
+                Console.WriteLine($"Message received: {content}");
+                SendMessage(handler);
+            }
+            state.sb.Clear();
+            handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
+                new AsyncCallback(ReadCallback), state);
         }
 
         private void SendResponse(Socket handler, String data)
         {
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
-            //byte[] responseMessage = Encoding.ASCII.GetBytes("HELLO");
-            //handler.Send(responseMessage);
-            handler.BeginSend(byteData, 0, byteData.Length, 0,
-            new AsyncCallback(SendCallback), handler);
+            //byte[] byteData = Encoding.ASCII.GetBytes(data);
+            byte[] responseMessage = Encoding.ASCII.GetBytes(data);
+            handler.Send(responseMessage);
+            SendMessage(handler);
+            //handler.BeginSend(byteData, 0, byteData.Length, 0,
+            //new AsyncCallback(SendCallback), handler);
         }
 
-        private void SendMessege(Socket handler)
+        private void SendMessage(Socket handler)
         {
+            
+                try
+                {
+                    Console.WriteLine("Type a message: ");
+                    string message = Console.ReadLine();
 
+                    List<int> testLabels = new List<int> { 1, 2, 3, 4 };
+                    Package package = new Package(ipAddress.ToString(), port, testLabels, message);
+                    string json = SerializeToJson(package);
 
-            Console.WriteLine("Type a message: ");
-            string message = Console.ReadLine();
+                    byte[] byteData = Encoding.ASCII.GetBytes(json);
+                    //handler.BeginSend(byteData, 0, byteData.Length, 0,
+                    //   new AsyncCallback(SendCallback), handler);
+                    handler.Send(byteData);
+                }
+                catch
+                {
+                    Console.WriteLine("Connection with Routerrro is booomerrrro");
+                    // msSocket.Shutdown(SocketShutdown.Both);
+                    //ListenForConnections();
+                }
+            
+        }
+        public string SerializeToJson(Package package)
+        {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
 
-            byte[] byteData = Encoding.ASCII.GetBytes(message);
-            handler.BeginSend(byteData, 0, byteData.Length, 0,
-                new AsyncCallback(SendCallback), handler);
+            return jsonString;
+        }
 
-
+        public Package DeserializeFromJson(string serializedString)
+        {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
         }
 
         private void SendCallback(IAsyncResult ar)
@@ -136,9 +176,7 @@ namespace ManagementSystem
                 Console.WriteLine("Sent {0} bytes to client.", bytesSent);
                 //handler.Shutdown(SocketShutdown.Both);
                 // handler.Close();
-                SendMessege(handler);
-
-
+                SendMessage(handler);
             }
             catch (Exception e)
             {

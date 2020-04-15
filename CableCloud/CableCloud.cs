@@ -19,116 +19,108 @@ namespace CableCloud
     {
         
 
-
-        private IPAddress Address = IPAddress.Parse("127.0.0.1"); // jedno IP do wszystkiego
-        private const int cableCloudPort = 5001;
-        private int routerPort = 5000;
-
-        private static ManualResetEvent connectCompleted = new ManualResetEvent(false);
-        private static ManualResetEvent sendCompleted = new ManualResetEvent(false);
-        private static ManualResetEvent receiveCompleted = new ManualResetEvent(false);
-        private static string response = String.Empty;
+        private static ManualResetEvent done = new ManualResetEvent(false);
 
 
         public CableCloud()
         {
-            //przypomniec sobie czy potrzebuje wczytac tablice i czy przeciążyć konstruktor
-            Start();
+            
         }
 
-        public void Start()
+        public void Start(int myPort)
         {
-            Socket cloudSocket = new Socket(Address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            cloudSocket.BeginConnect(new IPEndPoint(Address, cableCloudPort),
-                new AsyncCallback(ConnectionCallBack), cloudSocket);
+            IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+            IPAddress address = IPAddress.Parse("127.0.0.1");
+
+            Console.WriteLine("port number is " + myPort);
+            IPEndPoint localEndPoint = new IPEndPoint(address, myPort);
+
+            Socket cloudSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
             try
             {
-                Receive(cloudSocket);
-                receiveCompleted.WaitOne();
-                Console.WriteLine($"Response received {response}");
-                cloudSocket.Shutdown(SocketShutdown.Both);
-                cloudSocket.Close();
+                cloudSocket.Bind(localEndPoint);
+                cloudSocket.Listen(100);
 
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-
-        }
-
-        private static void Send(Socket s, String d)
-        {
-            byte[] byteData = Encoding.ASCII.GetBytes(d);
-            s.BeginSend(byteData, 0, byteData.Length, 0, new AsyncCallback(SendCallback), s);
-        }
-
-        private static void Receive(Socket cloudSocket)
-        {
-            try
-            {
-                StateObject state = new StateObject();
-                state.workSocket = cloudSocket;
-                cloudSocket.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-        private static void ReceiveCallback(IAsyncResult ar)
-        {
-            StateObject state = (StateObject)ar.AsyncState;
-            var hostSocket = state.workSocket;
-            int byteRead = hostSocket.EndReceive(ar);
-            if (byteRead > 0)
-            {
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, byteRead));
-                hostSocket.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            else
-            {
-                if (state.sb.Length > 1)
+                while(true)
                 {
-                    response = state.sb.ToString();
+                    done.Reset();
+                    Console.WriteLine("Waiting for a incomming connection...");
+                    cloudSocket.BeginAccept(new AsyncCallback(AcceptCallback), cloudSocket);
+                    done.WaitOne();
                 }
 
-                receiveCompleted.Set();
-            }
-        }
-
-        private static void SendCallback(IAsyncResult ar)
-        {
-            try
-            {
-                Socket cloudSocket = (Socket)ar.AsyncState;
-                int byteSent = cloudSocket.EndSend(ar);
-                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
-                sendCompleted.Set();
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.ToString());
+            }
+            Console.WriteLine("Press any kay to cont..");
+            Console.Read();
+
+        }
+
+        private void AcceptCallback(IAsyncResult ar)
+        {
+            done.Set();
+
+            Socket cloudSocketListener = (Socket)ar.AsyncState;
+            Socket cloudSocketHandler = cloudSocketListener.EndAccept(ar);
+
+            StateObject state = new StateObject();
+            state.workSocket = cloudSocketHandler;
+            cloudSocketHandler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+        }
+
+        private void ReadCallback(IAsyncResult ar)
+        {
+            String content =String.Empty;
+
+            StateObject state = (StateObject)ar.AsyncState;
+            Socket handler = state.workSocket;
+
+            int read = handler.EndReceive(ar);
+
+            if(read > 0)
+            {
+                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
+
+                content = state.sb.ToString();
+
+                if (content.IndexOf("<EOF>") > -1)
+                {
+                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
+                    Send(handler, content);
+                } else
+                {
+                    handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+                }
             }
         }
 
-        private static void ConnectionCallBack(IAsyncResult ar)
+        private void Send(Socket handler, string content)
+        {
+            byte[] data = Encoding.ASCII.GetBytes(content);
+
+            handler.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), handler);
+        }
+
+        private void SendCallback(IAsyncResult ar)
         {
             try
             {
-                Socket cloudSocket = (Socket)ar.AsyncState;
-                cloudSocket.EndConnect(ar);
-                Console.WriteLine("Host connected to cable cloud");
-                connectCompleted.Set();
+                Socket handler = (Socket)ar.AsyncState;
+
+                int sent = handler.EndSend(ar);
+                Console.WriteLine("Sent {0} bytes to client", sent);
+
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine(e.ToString());
             }
         }
-
     }
 }

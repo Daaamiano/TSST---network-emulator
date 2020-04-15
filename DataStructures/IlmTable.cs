@@ -13,6 +13,14 @@ namespace DataStructures
         {
             string rowName = routerName + "_ILM";
             LoadTableFromFile(configFilePath, rowName);
+            // test:
+            /*
+            Console.WriteLine("ILM {0}: ", routerName);
+            foreach (var entry in entries)
+            {
+                Console.WriteLine(entry.Value.inPort);
+            } 
+            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)
@@ -24,7 +32,7 @@ namespace DataStructures
                 {
                     continue;
                 }
-                if (splitRow[3] == "-")
+                else if (splitRow[3] == "-")
                 {
                     var entry = new IlmEntry(int.Parse(splitRow[2]), null, int.Parse(splitRow[4]));
                     entries.Add(int.Parse(splitRow[1]), entry);

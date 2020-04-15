@@ -5,15 +5,17 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
+using System.Threading.Tasks;
 using DataStructures;
 
 namespace Router
 {
     class Router
     {
-        private static byte[] buffer = new byte[2048];
-        private static Socket managementSystemSocket;
+        private Socket managementSystemSocket;
+        private Socket cableCloudSocket;
 
         public string routerName;
         private IPAddress ipAddress;        // adres IP danego routera
@@ -29,62 +31,45 @@ namespace Router
         private FtnTable ftnTable;
         private NhlfeTable nhlfeTable;
 
-        private ManualResetEvent connectDone = new ManualResetEvent(false);
-
         public Router(string routerConfigFilePath, string tablesConfigFilePath)
         {
             LoadPropertiesFromFile(routerConfigFilePath);
             LoadTablesFromFile(tablesConfigFilePath);
             Console.Title = "Router";
+            //test
+            /*
+            List<int> testLabels = new List<int> { 1, 2, 3, 4 };
+            Package testPackage = new Package(managementSystemAddress.ToString(), managementSystemPort, testLabels, "Dupcia Damiana");
+            string json = SerializeToJson(testPackage);
+            testPackage = DeserializeFromJson(json);
+            */
             //Console.ReadLine();
         }
 
         public void Start()
         {
-            managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            cableCloudSocket = new Socket(cloudAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             ConnectToManagementSystem();
-
         }
 
         private void ConnectToManagementSystem()
         {
             Console.WriteLine("Connecting to management system...");
-            /*try
-            {
-                // Connect to the remote endpoint.  
-                managementSystemSocket.BeginConnect(new IPEndPoint(managementSystemAddress, managementSystemPort),
-                    new AsyncCallback(ConnectCallback), managementSystemSocket);
-                connectDone.WaitOne();
-
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-            */
             while (true)
             {
-                managementSystemSocket.ReceiveTimeout = 20000;
-
+                //managementSystemSocket.ReceiveTimeout = 20000;
+                managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
-                    var result = managementSystemSocket.BeginConnect(new IPEndPoint(managementSystemAddress, managementSystemPort), null, null);
-
-                    bool success = result.AsyncWaitHandle.WaitOne(5000, true);
-                    if (success)
-                    {
-                        managementSystemSocket.EndConnect(result);
-                    }
-                    else
-                    {
-                        managementSystemSocket.Close();
-                        Console.WriteLine("Connection to MS not established - timeout...");
-                        continue;
-                    }
+                    managementSystemSocket.Connect(new IPEndPoint(managementSystemAddress, managementSystemPort));
+                   
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Retrying...");
+                    Console.WriteLine("Couldn't connect to management system.");
+                    Console.WriteLine("Reconnecting...");
+                    Thread.Sleep(5000);
+                    continue;
                 }
 
                 try
@@ -100,19 +85,18 @@ namespace Router
                     if (message.Contains("HELLO"))
                     {
                         Console.WriteLine("Estabilished connection with MS");
-                        //Console.ReadLine();
-                        Receivemessages();
+                        ReceiveMessages();
                         break;
                     }
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Couldn't connect to MS!");
+                    Console.WriteLine("Couldn't send hello to management system.");
                 }
             }
         }
 
-        private void Receivemessages()
+        private void ReceiveMessages()
         {
             while (true)
             {
@@ -121,9 +105,8 @@ namespace Router
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
                 Console.WriteLine(message);
             }
-
         }
-
+        /*
         private void ConnectCallback(IAsyncResult ar)
         {
             try
@@ -145,7 +128,7 @@ namespace Router
                 Console.WriteLine(e.ToString());
             }
         }
-
+        */
         private void LoadPropertiesFromFile(string configFilePath)
         {
             var properties = new Dictionary<string, string>();
@@ -179,15 +162,40 @@ namespace Router
             }
         }
 
-        public void Listen()
+        public string SerializeToJson(Package package)
         {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
 
-
+            return jsonString;
         }
 
-        public void Read()
+        public Package DeserializeFromJson(string serializedString)
         {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
+        }
 
+        public void PushLabel(Package package, int label)
+        {
+            package.labels.Add(label);
+        }
+
+        public void PopLabel(Package package)
+        {
+            if (package.labels.Any())
+            {
+                package.labels.RemoveAt(package.labels.Count - 1);
+            }
+            else
+            {
+                Console.WriteLine("Próba zdjęcia etykiety z pustej listy etykiet.");
+            }
         }
 
         public bool Send()
