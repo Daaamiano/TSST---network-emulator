@@ -3,6 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Text.Json;
+using DataStructures;
+
 
 
 namespace Host
@@ -35,6 +38,7 @@ namespace Host
         private static ManualResetEvent sendCompleted = new ManualResetEvent(false);
         private static ManualResetEvent receiveCompleted = new ManualResetEvent(false);
         private static string response = String.Empty;
+        private static string response = Strng.Empty;
 
         public Host(string filePath)
         {
@@ -45,7 +49,7 @@ namespace Host
 
         public static void StartHost()
         {
-            Socket hostSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Socket hostSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             hostSocket.BeginConnect(new IPEndPoint(cableCloudIpAddress, cableCloudPort),
             new AsyncCallback(ConnectionCallBack), hostSocket);
 
@@ -184,7 +188,11 @@ namespace Host
 
         private static void Send(Socket hostSocket, string data)
         {
-            byte[] byteData = Encoding.ASCII.GetBytes(data);
+            //public Package(int sourcePort, string destAddress, int destPort, string message) 
+            Package package = new Package(12345, "ziomki tomka", 2331341, "data");
+            string jsonPackage = SerializeToJson(package);
+
+            byte[] byteData = Encoding.ASCII.GetBytes(jsonPackage);
             hostSocket.BeginSend(byteData, 0, byteData.Length, 0, 
                 new AsyncCallback(SendCallback), hostSocket);
         }
@@ -204,6 +212,17 @@ namespace Host
             }
         }
 
+        public string SerializeToJson(Package package)
+        {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
+
+            return jsonString;
+        }
 
         private static void ConnectionCallBack(IAsyncResult ar)
         {

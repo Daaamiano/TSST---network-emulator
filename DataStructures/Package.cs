@@ -9,6 +9,7 @@ namespace DataStructures
     public class Package
     {
         public string destAddress { get; set; }
+        public int sourcePort { get; set; }
         public int destPort { get; set; }
         public List<int> labels { get; set; }
         public string message { get; set; }
@@ -16,6 +17,7 @@ namespace DataStructures
         public Package()
         {
             destAddress = default;
+            sourcePort = default;
             destPort = default;
             labels = default;
             message = default;
@@ -25,6 +27,14 @@ namespace DataStructures
         {
             this.destAddress = destAddress;
             this.destPort = destPort;
+        }
+
+        public Package(int sourcePort, string destAddress, int destPort, string message) 
+        {
+            this.sourcePort = sourcePort;
+            this.destAddress = destAddress;
+            this.destPort = destPort;
+            this.message = message;
         }
 
         public Package(string destAddress, int destPort, List<int> labels, string message)
