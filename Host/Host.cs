@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 
+
 namespace Host
 {
     public class ObjectState
@@ -18,13 +19,18 @@ namespace Host
     {
         private string hostName;
         private int sourcePort;
+        private static IPAddress ipSourceAddress;
         private static int h1Port;
+        private static IPAddress ipAddressH1;
         private static int h2Port;
+        private static IPAddress ipAddressH2;
         private static int h3Port;
+        private static IPAddress ipAddressH3;
         private static int h4Port;
+        private static IPAddress ipAddressH4;
         private static int cableCloudPort;
         private static int destinationPort;
-        private static IPAddress ipAddress;
+        private static IPAddress cableCloudIpAddress;
         private static ManualResetEvent connectCompleted = new ManualResetEvent(false);
         private static ManualResetEvent sendCompleted = new ManualResetEvent(false);
         private static ManualResetEvent receiveCompleted = new ManualResetEvent(false);
@@ -40,7 +46,7 @@ namespace Host
         public static void StartHost()
         {
             Socket hostSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            hostSocket.BeginConnect(new IPEndPoint(ipAddress, cableCloudPort),
+            hostSocket.BeginConnect(new IPEndPoint(cableCloudIpAddress, cableCloudPort),
             new AsyncCallback(ConnectionCallBack), hostSocket);
 
 
@@ -97,32 +103,45 @@ namespace Host
             string[] lines = System.IO.File.ReadAllLines(filePath);
             hostName = lines[1];
             sourcePort = int.Parse(lines[2]);
-            ipAddress = IPAddress.Parse(lines[6]);
-            cableCloudPort = int.Parse(lines[7]);
+            ipSourceAddress = IPAddress.Parse(lines[3]);
+            cableCloudIpAddress = IPAddress.Parse(lines[10]);
+            cableCloudPort = int.Parse(lines[11]);
 
             if (hostName == "H1")
             {
-                h2Port = int.Parse(lines[3]);
-                h3Port = int.Parse(lines[4]);
-                h4Port = int.Parse(lines[5]);
+                h2Port = int.Parse(lines[4]);
+                ipAddressH2 = IPAddress.Parse(lines[5]);
+                h3Port = int.Parse(lines[6]);
+                ipAddressH3 = IPAddress.Parse(lines[7]);
+                h4Port = int.Parse(lines[8]);
+                ipAddressH4 = IPAddress.Parse(lines[9]);
             }
             else if (hostName == "H2")
             {
-                h1Port = int.Parse(lines[3]);
-                h3Port = int.Parse(lines[4]);
-                h4Port = int.Parse(lines[5]);
+                h1Port = int.Parse(lines[4]);
+                ipAddressH1 = IPAddress.Parse(lines[5]);
+                h3Port = int.Parse(lines[6]);
+                ipAddressH3 = IPAddress.Parse(lines[7]);
+                h4Port = int.Parse(lines[8]);
+                ipAddressH4 = IPAddress.Parse(lines[9]);
             }
             else if (hostName == "H3")
             {
-                h1Port = int.Parse(lines[3]);
-                h2Port = int.Parse(lines[4]);
-                h4Port = int.Parse(lines[5]);
+                h1Port = int.Parse(lines[4]);
+                ipAddressH1 = IPAddress.Parse(lines[5]);
+                h2Port = int.Parse(lines[6]);
+                ipAddressH2 = IPAddress.Parse(lines[7]);
+                h4Port = int.Parse(lines[8]);
+                ipAddressH4 = IPAddress.Parse(lines[9]);
             }
             else if (hostName == "H4")
             {
-                h1Port = int.Parse(lines[3]);
-                h2Port = int.Parse(lines[4]);
-                h3Port = int.Parse(lines[5]);
+                h1Port = int.Parse(lines[4]);
+                ipAddressH1 = IPAddress.Parse(lines[5]);
+                h2Port = int.Parse(lines[6]);
+                ipAddressH2 = IPAddress.Parse(lines[7]);
+                h3Port = int.Parse(lines[8]);
+                ipAddressH3 = IPAddress.Parse(lines[9]);
             }
         }
 
@@ -184,6 +203,7 @@ namespace Host
                 Console.WriteLine(e);
             }
         }
+
 
         private static void ConnectionCallBack(IAsyncResult ar)
         {

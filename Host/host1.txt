@@ -1,8 +1,12 @@
-// Po kolei: nazwa hosta, port Ÿród³owy portu, port H2, port H3, port H4, ip chmury, port chmury
+// Po kolei: nazwa hosta, port i ip Ÿród³owego hosta, port i ip H2, port i ip H3, port i ip H4, ip chmury, port chmury
 H1
 1010
+190.98.50.10
 2030
+155.87.30.1
 3030
+155.87.30.2
 4040
+168.53.20.35
 127.0.0.1
 5001
