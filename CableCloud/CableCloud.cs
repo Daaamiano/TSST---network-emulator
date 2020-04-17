@@ -1,8 +1,10 @@
-﻿using System;
+﻿using DataStructures;
+using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 
 namespace CableCloud
@@ -87,7 +89,7 @@ namespace CableCloud
 
                 content = state.sb.ToString();
 
-                /* przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
+                // przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
                 Console.WriteLine("write port number to resend the message");
@@ -98,15 +100,15 @@ namespace CableCloud
                 state.workSocket = sendSocket;
                 sendSocket.BeginConnect(new IPEndPoint(address, result),
                 new AsyncCallback(ConnectionCallBack), sendSocket);
-                */
+                
 
                 if (content.IndexOf("<EOF>") > -1)
                 {
                     Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
 
                     // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
-                    //Send(sendSocket, content); // to jak przesylanie wiadomosci na nowy port
-                    Send(handler, content); // to jak chcemy wyslac echo
+                    Send(sendSocket, content); // to jak przesylanie wiadomosci na nowy port
+                    //Send(handler, content); // to jak chcemy wyslac echo
                 }
                 else
                 {
@@ -153,6 +155,25 @@ namespace CableCloud
             {
                 Console.WriteLine(e.ToString());
             }
+        }
+
+        public string SerializeToJson(Package package)
+        {
+            string jsonString;
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            };
+            jsonString = JsonSerializer.Serialize(package, options);
+
+            return jsonString;
+        }
+
+        public Package DeserializeFromJson(string serializedString)
+        {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
         }
     }
 }
