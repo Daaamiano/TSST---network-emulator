@@ -87,7 +87,7 @@ namespace CableCloud
 
                 content = state.sb.ToString();
 
-                /* przesylanie wiadomosci na nowy port                 * 
+                /* przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
                 Console.WriteLine("write port number to resend the message");
