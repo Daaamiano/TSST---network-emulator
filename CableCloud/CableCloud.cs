@@ -93,8 +93,8 @@ namespace CableCloud
                 Package package = DeserializeFromJson(content);
 
                 Console.WriteLine("wysylam na port");
-                Console.WriteLine(package.sourcePort);
-                /*
+                Console.WriteLine(package.incomingPort);
+                
                 // przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
@@ -106,15 +106,15 @@ namespace CableCloud
                 state.workSocket = sendSocket;
                 sendSocket.BeginConnect(new IPEndPoint(address, result),
                 new AsyncCallback(ConnectionCallBack), sendSocket);
-                */
+                
 
-                if (content.IndexOf("<EOF>") > -1)
+                if (true)
                 {
                     Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
 
                     // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
-                    //Send(sendSocket, content); // to jak przesylanie wiadomosci na nowy port
-                    Send(handler, content); // to jak chcemy wyslac echo
+                    Send(sendSocket, content); // to jak przesylanie wiadomosci na nowy port
+                    //Send(handler, content); // to jak chcemy wyslac echo
                 }
                 else
                 {
