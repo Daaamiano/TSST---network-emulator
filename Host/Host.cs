@@ -21,6 +21,7 @@ namespace Host
     {
         private string hostName;
         private int sourcePort;
+        private static int recPort = 5007;
         private static IPAddress ipSourceAddress;
         private static int h1Port;
         private static IPAddress ipAddressH1;
@@ -91,11 +92,12 @@ namespace Host
                     Console.WriteLine("Please try again: ");
                 }
 
-                Receive(hostSocket);
+                Socket recSocket = new Socket(new IPEndPoint(cableCloudIpAddress, recPort).AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                Receive(recSocket);
                 receiveCompleted.WaitOne();
                 Console.WriteLine($"Response received {response}");
-                hostSocket.Shutdown(SocketShutdown.Both);
-                hostSocket.Close();
+                recSocket.Shutdown(SocketShutdown.Both);
+                recSocket.Close();
             }
 
         }
@@ -210,6 +212,21 @@ namespace Host
                 new AsyncCallback(SendCallback), hostSocket);
         }
 
+        private static void SendCallback(IAsyncResult ar)
+        {
+            try
+            {
+                Socket hostSocket = (Socket)ar.AsyncState;
+                int byteSent = hostSocket.EndSend(ar);
+                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
+                sendCompleted.Set();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
         public static string SerializeToJson(Package package)
         {
             string jsonString;
@@ -227,21 +244,6 @@ namespace Host
             Package package = new Package();
             package = JsonSerializer.Deserialize<Package>(serializedString);
             return package;
-        }
-
-        private static void SendCallback(IAsyncResult ar)
-        {
-            try
-            {
-                Socket hostSocket = (Socket)ar.AsyncState;
-                int byteSent = hostSocket.EndSend(ar);
-                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
-                sendCompleted.Set();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
         }
 
         private static void ConnectionCallBack(IAsyncResult ar)
