@@ -9,22 +9,22 @@ namespace CableCloud
 {
     public class StateObject
     {
-        public Socket workSocket = null;      
-        public const int bufferSize = 1024;     
-        public byte[] buffer = new byte[bufferSize];       
+        public Socket workSocket = null;
+        public const int bufferSize = 1024;
+        public byte[] buffer = new byte[bufferSize];
         public StringBuilder sb = new StringBuilder();
     }
 
     class CableCloud
     {
-        
+
 
         private static ManualResetEvent done = new ManualResetEvent(false);
 
 
         public CableCloud()
         {
-            
+
         }
 
         public void Start(int myPort)
@@ -42,7 +42,7 @@ namespace CableCloud
                 cloudSocket.Bind(localEndPoint);
                 cloudSocket.Listen(100);
 
-                while(true)
+                while (true)
                 {
                     done.Reset();
                     Console.WriteLine("Waiting for a incomming connection...");
@@ -74,24 +74,41 @@ namespace CableCloud
 
         private void ReadCallback(IAsyncResult ar)
         {
-            String content =String.Empty;
+            String content = String.Empty;
 
             StateObject state = (StateObject)ar.AsyncState;
             Socket handler = state.workSocket;
 
             int read = handler.EndReceive(ar);
 
-            if(read > 0)
+            if (read > 0)
             {
                 state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
 
                 content = state.sb.ToString();
 
+                /* przesylanie wiadomosci na nowy port                 * 
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
+                Console.WriteLine("write port number to resend the message");
+                string port = Console.ReadLine();
+                int result = Int32.Parse(port);
+                IPAddress address = IPAddress.Parse("127.0.0.1");
+                Socket sendSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                state.workSocket = sendSocket;
+                sendSocket.BeginConnect(new IPEndPoint(address, result),
+                new AsyncCallback(ConnectionCallBack), sendSocket);
+                */
+
                 if (content.IndexOf("<EOF>") > -1)
                 {
                     Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
-                    Send(handler, content);
-                } else
+
+                    // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
+                    //Send(sendSocket, content); // to jak przesylanie wiadomosci na nowy port
+                    Send(handler, content); // to jak chcemy wyslac echo
+                }
+                else
                 {
                     handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
@@ -103,6 +120,21 @@ namespace CableCloud
             byte[] data = Encoding.ASCII.GetBytes(content);
 
             handler.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), handler);
+        }
+
+        private static void ConnectionCallBack(IAsyncResult ar)
+        {
+            try
+            {
+                Socket hostSocket = (Socket)ar.AsyncState;
+                hostSocket.EndConnect(ar);
+                Console.WriteLine("Host connected to cable cloud");
+                done.Set();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
         }
 
         private void SendCallback(IAsyncResult ar)
