@@ -1,11 +1,10 @@
-﻿using System;
+﻿using DataStructures;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Text.Json;
-using DataStructures;
-
+using System.Threading;
 
 
 namespace Host
@@ -16,8 +15,8 @@ namespace Host
         public const int bufferSize = 1024;
         public byte[] buffer = new byte[bufferSize];
         public StringBuilder sb = new StringBuilder();
-    } 
-    
+    }
+
     class Host
     {
         private string hostName;
@@ -38,7 +37,6 @@ namespace Host
         private static ManualResetEvent sendCompleted = new ManualResetEvent(false);
         private static ManualResetEvent receiveCompleted = new ManualResetEvent(false);
         private static string response = String.Empty;
-        private static string response = Strng.Empty;
 
         public Host(string filePath)
         {
@@ -55,7 +53,7 @@ namespace Host
 
 
             bool correctChoice = false;
-            while(true)
+            while (true)
             {
                 Console.WriteLine("You are host");
                 Console.WriteLine("Write '1'  if you want to send the message to another host ");
@@ -85,7 +83,7 @@ namespace Host
                     {
                         Console.WriteLine(e);
                     }
-                }        
+                }
                 else
                 {
                     correctChoice = false;
@@ -99,7 +97,7 @@ namespace Host
                 hostSocket.Shutdown(SocketShutdown.Both);
                 hostSocket.Close();
             }
-            
+
         }
 
         private void LoadPropertiesFromFile(string filePath)
@@ -151,60 +149,12 @@ namespace Host
 
         private static void Receive(Socket hostSocket)
         {
-            try 
+            try
             {
                 ObjectState state = new ObjectState();
                 state.workSocket = hostSocket;
-                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0, 
+                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0,
                     new AsyncCallback(ReceiveCallback), state);
-            }
-            catch (Exception e) 
-            {
-                Console.WriteLine(e);
-            }
-        }
-
-        private static void ReceiveCallback(IAsyncResult ar)
-        {
-            ObjectState state = (ObjectState) ar.AsyncState;
-            var hostSocket = state.workSocket;
-            int byteRead = hostSocket.EndReceive(ar);
-            if (byteRead > 0)
-            {
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer,0,byteRead));
-                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0, 
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            else
-            {
-                if(state.sb.Length > 1)
-                {
-                    response = state.sb.ToString();
-                }
-                
-                receiveCompleted.Set();
-            }
-        }
-
-        private static void Send(Socket hostSocket, string data)
-        {
-            //public Package(int sourcePort, string destAddress, int destPort, string message) 
-            Package package = new Package(12345, "ziomki tomka", 2331341, "data");
-            string jsonPackage = SerializeToJson(package);
-
-            byte[] byteData = Encoding.ASCII.GetBytes(jsonPackage);
-            hostSocket.BeginSend(byteData, 0, byteData.Length, 0, 
-                new AsyncCallback(SendCallback), hostSocket);
-        }
-
-        private static void SendCallback(IAsyncResult ar)
-        {
-            try
-            {
-                Socket hostSocket = (Socket) ar.AsyncState;
-                int byteSent = hostSocket.EndSend(ar);
-                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
-                sendCompleted.Set();
             }
             catch (Exception e)
             {
@@ -212,7 +162,55 @@ namespace Host
             }
         }
 
-        public string SerializeToJson(Package package)
+        private static void ReceiveCallback(IAsyncResult ar)
+        {
+            ObjectState state = (ObjectState)ar.AsyncState;
+            var hostSocket = state.workSocket;
+            int byteRead = hostSocket.EndReceive(ar);
+            if (byteRead > 0)
+            {
+                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, byteRead));
+
+                //deserializacja
+                String content = String.Empty;
+                content = state.sb.ToString();
+                Package package = DeserializeFromJson(content);
+                Console.WriteLine(package.message);
+
+                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0,
+                    new AsyncCallback(ReceiveCallback), state);
+            }
+            else
+            {
+                if (state.sb.Length > 1)
+                {
+                    response = state.sb.ToString();
+                }
+
+                receiveCompleted.Set();
+            }
+        }
+
+        private static void Send(Socket hostSocket, string data)
+        {
+            /*
+            byte[] byteData = Encoding.ASCII.GetBytes(data);
+            hostSocket.BeginSend(byteData, 0, byteData.Length, 0,
+                new AsyncCallback(SendCallback), hostSocket);
+             */
+
+            //nowe
+            string message = data;
+
+            Package package = new Package(1939, "ziomki tomka", 2020, message);
+            string json = SerializeToJson(package);
+            Console.WriteLine(json);
+            byte[] byteData = Encoding.ASCII.GetBytes(json);
+            hostSocket.BeginSend(byteData, 0, byteData.Length, 0,
+                new AsyncCallback(SendCallback), hostSocket);
+        }
+
+        public static string SerializeToJson(Package package)
         {
             string jsonString;
             var options = new JsonSerializerOptions
@@ -224,11 +222,33 @@ namespace Host
             return jsonString;
         }
 
+        public static Package DeserializeFromJson(string serializedString)
+        {
+            Package package = new Package();
+            package = JsonSerializer.Deserialize<Package>(serializedString);
+            return package;
+        }
+
+        private static void SendCallback(IAsyncResult ar)
+        {
+            try
+            {
+                Socket hostSocket = (Socket)ar.AsyncState;
+                int byteSent = hostSocket.EndSend(ar);
+                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
+                sendCompleted.Set();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
         private static void ConnectionCallBack(IAsyncResult ar)
         {
             try
             {
-                Socket hostSocket = (Socket) ar.AsyncState;
+                Socket hostSocket = (Socket)ar.AsyncState;
                 hostSocket.EndConnect(ar);
                 Console.WriteLine("Host connected to cable cloud");
                 connectCompleted.Set();
@@ -239,6 +259,5 @@ namespace Host
             }
         }
     }
-    
-}
 
+}
