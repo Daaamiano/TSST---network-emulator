@@ -27,14 +27,15 @@ namespace DataStructures
 
         public Package(string sourceName, string destAddress, int destPort, string message)
         {
+            this.sourceName = sourceName;
             this.destAddress = destAddress;
             this.destPort = destPort;
+            this.message = message;
         }
 
         public Package(int incomingPort, string destAddress, int destPort, string message) 
         {
             this.incomingPort = incomingPort;
-            this.sourceName = sourceName;
             this.destAddress = destAddress;
             this.destPort = destPort;
             this.message = message;

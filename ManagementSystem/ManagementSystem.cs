@@ -547,6 +547,7 @@ namespace ManagementSystem
                 Console.WriteLine("Couldn't send message.");
             }
         }
+
         public string SerializeToJson(Package package)
         {
             string jsonString;
