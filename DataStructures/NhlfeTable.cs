@@ -6,8 +6,10 @@ namespace DataStructures
 {
     public class NhlfeTable
     {
-        // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę, a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
-        Dictionary<int, NhlfeEntry> entries = new Dictionary<int, NhlfeEntry>();
+        // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę,
+        // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
+        // Kluczem jest ID.
+        public Dictionary<int, NhlfeEntry> entries = new Dictionary<int, NhlfeEntry>();
 
         public NhlfeTable(string configFilePath, string routerName)
         {
@@ -32,7 +34,7 @@ namespace DataStructures
                 {
                     continue;
                 }
-                if (splitRow[3] == "-" && splitRow[3] == "-" && splitRow[3] == "-")
+                if (splitRow[3] == "-" && splitRow[4] == "-" && splitRow[5] == "-")
                 {
                     var entry = new NhlfeEntry(splitRow[2], null, null, null);
                     entries.Add(int.Parse(splitRow[1]), entry);
@@ -56,6 +58,78 @@ namespace DataStructures
                 {
                     Console.WriteLine("Unknown NHLFE entry.");
                 }
+            }
+        }
+
+        public void AddRowToTable(string tablePath, string routerName, int idAdd, string operationAdd, int? outLabelAdd, int? outPortAdd, int? nextIdAdd)
+        {
+            entries.Add(idAdd, new NhlfeEntry(operationAdd, outLabelAdd, outPortAdd, nextIdAdd));
+            using (StreamWriter file = new StreamWriter(tablePath, true))
+            {
+                file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, outLabelAdd, outPortAdd, nextIdAdd);
+            }
+
+            Console.WriteLine($"\nSaved {routerName} NHLFE table to file");
+        }
+
+        public void DeleteRowFromTable(string row, string tablePath)
+        {
+            int counter = 1;
+            entries.Remove(int.Parse(row));
+            try
+            {
+                string[] lines = File.ReadAllLines(tablePath);
+                foreach (var entry in lines)
+                {
+                    var splitRow = entry.Split(", ");
+
+                    if (splitRow.Length == 1)
+                    {
+                        counter++;
+                        continue;
+                    }
+
+                    if (splitRow[1] == row)
+                    {
+                        break;
+                    }
+                    else
+                    {
+                        counter++;
+                    }
+                }
+                using (StreamWriter writer = new StreamWriter(tablePath))
+                {
+                    for (int currentLine = 1; currentLine <= lines.Length; ++currentLine)
+                    {
+                        if (currentLine == counter)
+                        {
+                            continue;
+
+                        }
+                        else
+                        {
+                            writer.WriteLine(lines[currentLine - 1]);
+                        }
+                    }
+                    Console.WriteLine("Deleted entry.");
+                }
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+            }
+        }
+
+        public void PrintEntries()
+        {
+            int i = 1;
+            Console.WriteLine("Index, ID, Operation, OutLabel, OutPort, NextID");
+            foreach (KeyValuePair<int, NhlfeEntry> kvp in entries)
+            {
+                Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, kvp.Value.outLabel, kvp.Value.outPort, kvp.Value.nextId);
+                i++;
             }
         }
     }

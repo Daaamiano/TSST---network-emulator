@@ -57,7 +57,6 @@ namespace Router
             Console.WriteLine("Connecting to management system...");
             while (true)
             {
-                //managementSystemSocket.ReceiveTimeout = 20000;
                 managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
@@ -74,23 +73,26 @@ namespace Router
 
                 try
                 {
-                    Console.WriteLine("Sending hello to MS...");
-                    managementSystemSocket.Send(Encoding.ASCII.GetBytes("HELLO"));
+                    Console.WriteLine("Sending CONNECTED to management system...");
+                    string connectedMessage = "CONNECTED";
+                    Package helloPackage = new Package(routerName, managementSystemAddress.ToString(), managementSystemPort, connectedMessage);
+                    managementSystemSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(helloPackage)));
 
                     byte[] buffer = new byte[256];
                     int bytes = managementSystemSocket.Receive(buffer);
 
                     var message = Encoding.ASCII.GetString(buffer, 0, bytes);
 
-                    if (message.Contains("HELLO"))
+                    if (message.Contains("CONNECTED"))
                     {
-                        Console.WriteLine("Estabilished connection with MS");
+                        Console.WriteLine("Connected to management system.");
                         ReceiveMessages();
                         break;
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    //Console.WriteLine(e.Source);
                     Console.WriteLine("Couldn't send hello to management system.");
                 }
             }
@@ -103,32 +105,10 @@ namespace Router
                 byte[] buffer = new byte[256];
                 int bytes = managementSystemSocket.Receive(buffer);
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                Console.WriteLine(message);
+                Console.WriteLine("Received from management system: {0}", message);
             }
         }
-        /*
-        private void ConnectCallback(IAsyncResult ar)
-        {
-            try
-            {
-                // Retrieve the socket from the state object.  
-                Socket client = (Socket)ar.AsyncState;
 
-                // Complete the connection.  
-                client.EndConnect(ar);
-
-                Console.WriteLine("Socket connected to {0}",
-                    client.RemoteEndPoint.ToString());
-
-                // Signal that the connection has been made.  
-                connectDone.Set();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-        }
-        */
         private void LoadPropertiesFromFile(string configFilePath)
         {
             var properties = new Dictionary<string, string>();
@@ -196,11 +176,6 @@ namespace Router
             {
                 Console.WriteLine("Próba zdjęcia etykiety z pustej listy etykiet.");
             }
-        }
-
-        public bool Send()
-        {
-            return true;
         }
 
         public bool Route()

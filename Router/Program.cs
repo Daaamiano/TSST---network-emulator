@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
 
 namespace Router
 {
@@ -15,8 +11,8 @@ namespace Router
             string tablesFileName = "R1_tables.properties";
             string workingDirectory = Environment.CurrentDirectory;
             string path = Path.Combine(Directory.GetParent(workingDirectory).Parent.Parent.Parent.FullName, @"DataStructures", fileName);
-            string pathTables = Path.Combine(Directory.GetParent(workingDirectory).Parent.Parent.Parent.FullName, @"DataStructures", tablesFileName);
-            Router router = new Router(path, pathTables);
+            string tablesPath = Path.Combine(Directory.GetParent(workingDirectory).Parent.Parent.Parent.FullName, @"DataStructures", tablesFileName);
+            Router router = new Router(path, tablesPath);
             router.Start(); 
          }
 
