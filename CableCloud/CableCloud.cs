@@ -1,6 +1,7 @@
 ﻿using DataStructures;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,16 +18,32 @@ namespace CableCloud
         public StringBuilder sb = new StringBuilder();
     }
 
+    class Tunnel
+    {
+        public string incomingObject;
+        public string destinationObject;
+        public int destinationPort;
+        public Tunnel(string incomingObject, int destinationPort, string destinationObject)
+        {
+            this.incomingObject = incomingObject;
+            this.destinationObject = destinationObject;
+            this.destinationPort = destinationPort;
+
+        }
+    }
+
     class CableCloud
     {
 
 
         private static ManualResetEvent done = new ManualResetEvent(false);
+        Dictionary<int, Tunnel> tunnels = new Dictionary<int, Tunnel>();
 
 
-        public CableCloud()
+        public CableCloud(string configFilePath)
         {
-
+            LoadTunnels(configFilePath);
+            Start(5001);
         }
 
         public void Start(int myPort)
@@ -92,19 +109,34 @@ namespace CableCloud
                 Console.WriteLine(content);
                 Package package = DeserializeFromJson(content);
 
-                Console.WriteLine("wysylam na port");
+                //tunelowanie test
+                Console.WriteLine("incoming port");
                 Console.WriteLine(package.incomingPort);
-                
+
+               
+                //tunelowanie test 
+                Console.WriteLine("destination port tunelu");
+                Console.WriteLine(tunnels[package.incomingPort].destinationPort);
+
+                //tunelowanie test 
+                Console.WriteLine("new incoming port");
+                Console.WriteLine(tunnels[package.incomingPort].destinationPort);
+                package.incomingPort = tunnels[package.incomingPort].destinationPort;
+
+                //serializacja pakietu z nowym incoming port
+                content = SerializeToJson(package);
+
                 // przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
-                Console.WriteLine("write port number to resend the message");
+                Console.WriteLine("write port number to resend the message (new incomiing port)");
                 string port = Console.ReadLine();
                 int result = Int32.Parse(port);
                 IPAddress address = IPAddress.Parse("127.0.0.1");
                 Socket sendSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 state.workSocket = sendSocket;
                 sendSocket.BeginConnect(new IPEndPoint(address, result),
+                //sendSocket.BeginConnect(new IPEndPoint(address, tunnels[].destinationPort),
                 new AsyncCallback(ConnectionCallBack), sendSocket);
                 
 
@@ -121,6 +153,23 @@ namespace CableCloud
                     handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
             }
+        }
+
+        private void LoadTunnels(string configFilePath)
+        {
+            foreach (var row in File.ReadAllLines(configFilePath))
+            {
+
+                var splitRow = row.Split(", ");
+                if (splitRow[0] =="#X" )
+                {
+                    continue;
+                }
+               //Console.WriteLine(splitRow[0]);
+                //Console.Read();
+                //Console.WriteLine(splitRow[0] + " " + splitRow[1] + " " + int.Parse(splitRow[2]) + " " + splitRow[3]);
+                tunnels.Add(int.Parse(splitRow[0]), new Tunnel(splitRow[1], int.Parse(splitRow[2]), splitRow[3]));
+            }            
         }
 
         private void Send(Socket handler, string content)
