@@ -1,5 +1,7 @@
 ﻿using DataStructures;
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -20,8 +22,7 @@ namespace Host
     class Host
     {
         private static string hostName;
-        private static int sourcePort;
-        private static int recPort;
+        private static int hostPort;
         private static IPAddress destAddress;
         private static IPAddress ipSourceAddress;
         private static int h1Port;
@@ -47,7 +48,7 @@ namespace Host
 
         public static void StartHost()
         {
-            IPEndPoint localEndPoint = new IPEndPoint(cableCloudIpAddress, recPort);
+            IPEndPoint localEndPoint = new IPEndPoint(cableCloudIpAddress, hostPort);
             Socket recSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
@@ -61,9 +62,6 @@ namespace Host
                 Console.WriteLine(e.ToString());
             }
 
-            Socket hostSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            hostSocket.BeginConnect(new IPEndPoint(cableCloudIpAddress, cableCloudPort),
-                new AsyncCallback(ConnectionCallBack), hostSocket);
 
             while (true)
             {
@@ -75,6 +73,10 @@ namespace Host
                 {
                     try
                     {
+                        Socket hostSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                        hostSocket.BeginConnect(new IPEndPoint(cableCloudIpAddress, cableCloudPort),
+                            new AsyncCallback(ConnectionCallBack), hostSocket);
+
                         Console.WriteLine("Choose which host you want to send the package to");
                         Console.WriteLine(@"To do this, write 'H1' or 'H2' or 'H3' or 'H4' -> host 1 is 'H1' etc.");
                         string nameDestinationHost = Console.ReadLine();
@@ -150,49 +152,52 @@ namespace Host
 
         private void LoadPropertiesFromFile(string filePath)
         {
-            string[] lines = System.IO.File.ReadAllLines(filePath);
-            hostName = lines[1];
-            sourcePort = int.Parse(lines[2]);
-            ipSourceAddress = IPAddress.Parse(lines[3]);
-            cableCloudIpAddress = IPAddress.Parse(lines[10]);
-            cableCloudPort = int.Parse(lines[11]);
-            recPort = int.Parse(lines[12]);
+            var properties = new Dictionary<string, string>();
+            foreach (var row in File.ReadAllLines(filePath))
+            {
+                properties.Add(row.Split('=')[0], row.Split('=')[1]);
+            }
+            hostName = properties["HOSTNAME"];
+            hostPort = int.Parse(properties["HOSTPORT"]);
+            ipSourceAddress = IPAddress.Parse(properties["IPSOURCEADDRESS"]);
+            cableCloudIpAddress = IPAddress.Parse(properties["CABLECLOUDIPADDRESS"]);
+            cableCloudPort = int.Parse(properties["CABLECLOUDPORT"]);
 
             if (hostName == "H1")
             {
-                h2Port = int.Parse(lines[4]);
-                ipAddressH2 = IPAddress.Parse(lines[5]);
-                h3Port = int.Parse(lines[6]);
-                ipAddressH3 = IPAddress.Parse(lines[7]);
-                h4Port = int.Parse(lines[8]);
-                ipAddressH4 = IPAddress.Parse(lines[9]);
+                h2Port = int.Parse(properties["H2PORT"]);
+                ipAddressH2 = IPAddress.Parse(properties["IPADDRESSH2"]);
+                h3Port = int.Parse(properties["H3PORT"]);
+                ipAddressH3 = IPAddress.Parse(properties["IPADDRESSH3"]);
+                h4Port = int.Parse(properties["H4PORT"]);
+                ipAddressH4 = IPAddress.Parse(properties["IPADDRESSH4"]);
             }
             else if (hostName == "H2")
             {
-                h1Port = int.Parse(lines[4]);
-                ipAddressH1 = IPAddress.Parse(lines[5]);
-                h3Port = int.Parse(lines[6]);
-                ipAddressH3 = IPAddress.Parse(lines[7]);
-                h4Port = int.Parse(lines[8]);
-                ipAddressH4 = IPAddress.Parse(lines[9]);
+                h1Port = int.Parse(properties["H1PORT"]);
+                ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
+                h3Port = int.Parse(properties["H3PORT"]);
+                ipAddressH3 = IPAddress.Parse(properties["IPADDRESSH3"]);
+                h4Port = int.Parse(properties["H4PORT"]);
+                ipAddressH4 = IPAddress.Parse(properties["IPADDRESSH4"]);
             }
             else if (hostName == "H3")
             {
-                h1Port = int.Parse(lines[4]);
-                ipAddressH1 = IPAddress.Parse(lines[5]);
-                h2Port = int.Parse(lines[6]);
-                ipAddressH2 = IPAddress.Parse(lines[7]);
-                h4Port = int.Parse(lines[8]);
-                ipAddressH4 = IPAddress.Parse(lines[9]);
+                h1Port = int.Parse(properties["H1PORT"]);
+                ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
+                h2Port = int.Parse(properties["H2PORT"]);
+                ipAddressH2 = IPAddress.Parse(properties["IPADDRESSH2"]);
+                h4Port = int.Parse(properties["H4PORT"]);
+                ipAddressH4 = IPAddress.Parse(properties["IPADDRESSH4"]);
             }
             else if (hostName == "H4")
             {
-                h1Port = int.Parse(lines[4]);
-                ipAddressH1 = IPAddress.Parse(lines[5]);
-                h2Port = int.Parse(lines[6]);
-                ipAddressH2 = IPAddress.Parse(lines[7]);
-                h3Port = int.Parse(lines[8]);
-                ipAddressH3 = IPAddress.Parse(lines[9]);
+                h1Port = int.Parse(properties["H1PORT"]);
+                ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
+                h2Port = int.Parse(properties["H2PORT"]);
+                ipAddressH2 = IPAddress.Parse(properties["IPADDRESSH2"]);
+                h3Port = int.Parse(properties["H3PORT"]);
+                ipAddressH3 = IPAddress.Parse(properties["IPADDRESSH3"]);
             }
         }
 
@@ -242,7 +247,7 @@ namespace Host
         private static void Send(Socket hostSocket, string data)
         {
             //public Package(int sourcePort, string destAddress, int destPort, string message)
-            Package package = new Package(sourcePort, destAddress.ToString(), destinationPort, data);
+            Package package = new Package(hostPort, destAddress.ToString(), destinationPort, data);
             string json = SerializeToJson(package);
             Console.WriteLine(json);
             byte[] byteData = Encoding.ASCII.GetBytes(json);
