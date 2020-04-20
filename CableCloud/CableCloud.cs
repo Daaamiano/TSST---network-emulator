@@ -52,7 +52,6 @@ namespace CableCloud
             IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
             IPAddress address = IPAddress.Parse("127.0.0.1");
 
-            Console.WriteLine("port number is " + myPort);
             IPEndPoint localEndPoint = new IPEndPoint(address, myPort);
 
             Socket cloudSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -64,10 +63,8 @@ namespace CableCloud
 
                 while (true)
                 {
-                    int i = 0;
-                    i++;
                     done.Reset();
-                    Console.WriteLine("Waiting for a incomming connection...");                    
+                    Logs.ShowLog(LogType.INFO, "Waiting for a incomming connection...");                    
                     cloudSocket.BeginAccept(new AsyncCallback(AcceptCallback), cloudSocket);
 
                     /*
@@ -77,17 +74,17 @@ namespace CableCloud
                     cloudSocket.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                     */
 
-                    Console.WriteLine("polaczono z tyloma obiektami: " + i);
+                    
                     done.WaitOne();
                 }
 
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Logs.ShowLog(LogType.ERROR, e.ToString());
             }
-            Console.WriteLine("Press any kay to cont..");
-            Console.Read();
+            //Console.WriteLine("Press any kay to cont..");
+            ///Console.Read();
 
         }
 
@@ -119,7 +116,8 @@ namespace CableCloud
 
                 var content = state.sb.ToString();
 
-                Console.WriteLine(content);
+                //Console.WriteLine(content);
+                Logs.ShowLog(LogType.INFO, ("Read {" + content.Length.ToString() + "} bytes from socket. \n Data : " + content));
                 package = DeserializeFromJson(content);
 
                 //slownik sucketow
@@ -127,7 +125,7 @@ namespace CableCloud
                 if (package.message == "CONNECTED")
                 {
                     // Send response message.
-                    Console.WriteLine($"Connection with {package.sourceName} established.");
+                    Logs.ShowLog(LogType.CONNECTED, $"Connection with {package.sourceName} established.");
                     try
                     {
                         connectedSockets.Add(package.sourceName, handler);
@@ -181,7 +179,7 @@ namespace CableCloud
                     */
 
 
-                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
+                    Logs.ShowLog(LogType.INFO, ("Sent {" + content.Length.ToString() + "} bytes to client. \n Data : "+ content));
 
 
                     // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
@@ -243,7 +241,7 @@ namespace CableCloud
             {
                 //var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
                 //Console.WriteLine(exceptionTrace);
-                Console.WriteLine("Connection with router lost." );
+                Logs.ShowLog(LogType.ERROR, "Connection with router lost." );
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
             }
@@ -273,13 +271,14 @@ namespace CableCloud
             handler.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), handler);
         }
 
+        /*
         private static void ConnectionCallBack(IAsyncResult ar)
         {
             try
             {
                 Socket hostSocket = (Socket)ar.AsyncState;
                 hostSocket.EndConnect(ar);
-                Console.WriteLine("Host connected to cable cloud");
+                Logs.ShowLog(LogType.INFO, "Host connected to cable cloud");
                 done.Set();
             }
             catch (Exception e)
@@ -287,6 +286,7 @@ namespace CableCloud
                 Console.WriteLine(e);
             }
         }
+        */
 
         private void SendCallback(IAsyncResult ar)
         {
@@ -295,7 +295,7 @@ namespace CableCloud
                 Socket handler = (Socket)ar.AsyncState;
 
                 int sent = handler.EndSend(ar);
-                Console.WriteLine("Sent {0} bytes to client", sent);
+                Logs.ShowLog(LogType.INFO, "Sent {" + sent.ToString() +"} bytes to client");
 
                
             }

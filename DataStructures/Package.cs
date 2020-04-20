@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,8 +34,9 @@ namespace DataStructures
             this.message = message;
         }
 
-        public Package(int incomingPort, string destAddress, int destPort, string message) 
+        public Package(string sourceName, int incomingPort, string destAddress, int destPort, string message) 
         {
+            this.sourceName = sourceName;
             this.incomingPort = incomingPort;
             this.destAddress = destAddress;
             this.destPort = destPort;

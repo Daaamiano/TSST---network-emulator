@@ -66,7 +66,7 @@ namespace Host
             */
                 while (true)
                 {
-                    Console.WriteLine($"You are host {hostName}");
+                    Logs.ShowLog(LogType.INFO, "You are host " + hostName);
                     Console.WriteLine("Write '1'  if you want to send the message to another host ");
 
                     int decision = int.Parse(Console.ReadLine());
@@ -112,7 +112,7 @@ namespace Host
                     }
                     else
                     {
-                        Console.WriteLine("You wrote something other than '1' ");
+                        Logs.ShowLog(LogType.ERROR, "You wrote something other than '1' ");
                         Console.WriteLine("Please try again: ");
                     }
                 }
@@ -121,7 +121,7 @@ namespace Host
 
         private void ConnectToCableCloud()
         {
-            Console.WriteLine("Connecting to cable cloud...");
+            Logs.ShowLog(LogType.INFO, "Connecting to cable cloud...");
             while (true)
             {
                 cableCloudSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -132,7 +132,7 @@ namespace Host
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Couldn't connect to cable cloud.");
+                    Logs.ShowLog(LogType.ERROR, "Couldn't connect to cable cloud.");
                     Console.WriteLine("Reconnecting...");
                     Thread.Sleep(5000);
                     continue;
@@ -140,10 +140,10 @@ namespace Host
 
                 try
                 {
-                    Console.WriteLine("Sending CONNECTED to cable cloud...");
+                    Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
                     string connectedMessage = "CONNECTED";
-                    Package helloPackage = new Package(hostName, cableCloudIpAddress.ToString(), cableCloudPort, connectedMessage);
-                    cableCloudSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(helloPackage)));
+                    Package package = new Package(hostName, cableCloudIpAddress.ToString(), cableCloudPort, connectedMessage);
+                    cableCloudSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(package)));
 
                     byte[] buffer = new byte[256];
                     int bytes = cableCloudSocket.Receive(buffer);
@@ -152,17 +152,16 @@ namespace Host
 
                     if (message.Contains("CONNECTED"))
                     {
-                        Console.WriteLine("Connected to cable cloud.");
+                        Logs.ShowLog(LogType.CONNECTED, "Connected to cable cloud.");
                         StartHost(cableCloudSocket);
                         ReceiveMessages();
                         break;
 
                     }
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
-                    //Console.WriteLine(e.Source);
-                    Console.WriteLine("Couldn't send hello to cable cloud.");
+                    Logs.ShowLog(LogType.ERROR, "Couldn't send hello to cable cloud.");
                 }
                     
             }
@@ -175,7 +174,7 @@ namespace Host
                 byte[] buffer = new byte[256];
                 int bytes = cableCloudSocket.Receive(buffer);
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                Console.WriteLine("Received from cable cloud: {0}", message);
+                Logs.ShowLog(LogType.INFO, "Received from cable cloud: {0}" + message); //czy message jest string?
             }
         }
         /*
@@ -262,7 +261,7 @@ namespace Host
                 ipAddressH3 = IPAddress.Parse(properties["IPADDRESSH3"]);
             }
         }
-
+        /*
         private static void Receive(Socket hostSocket)
         {
             try
@@ -277,7 +276,7 @@ namespace Host
                 Console.WriteLine(e);
             }
         }
-
+        */
         private static void ReceiveCallback(IAsyncResult ar)
         {
             ObjectState state = (ObjectState)ar.AsyncState;
@@ -309,9 +308,9 @@ namespace Host
         private static void Send(Socket hostSocket, string data)
         {
             //public Package(int sourcePort, string destAddress, int destPort, string message)
-            Package package = new Package(hostPort, destAddress.ToString(), destinationPort, data);
+            Package package = new Package(hostName, hostPort, destAddress.ToString(), destinationPort, data);
             string json = SerializeToJson(package);
-            Console.WriteLine(json);
+            Logs.ShowLog(LogType.INFO, ("Sending package to cable cloud: \n" + json));
             byte[] byteData = Encoding.ASCII.GetBytes(json);
             hostSocket.BeginSend(byteData, 0, byteData.Length, 0,
                 new AsyncCallback(SendCallback), hostSocket);
@@ -323,7 +322,7 @@ namespace Host
             {
                 Socket hostSocket = (Socket)ar.AsyncState;
                 int byteSent = hostSocket.EndSend(ar);
-                Console.WriteLine($"Sent: {byteSent} bytes to Cable Cloud");
+                Logs.ShowLog(LogType.INFO, $"Sent: {byteSent} bytes to Cable Cloud");
                 allDone.Set();
             }
             catch (Exception e)
@@ -349,21 +348,6 @@ namespace Host
             Package package = new Package();
             package = JsonSerializer.Deserialize<Package>(serializedString);
             return package;
-        }
-
-        private static void ConnectionCallBack(IAsyncResult ar)
-        {
-            try
-            {
-                Socket hostSocket = (Socket)ar.AsyncState;
-                hostSocket.EndConnect(ar);
-                Console.WriteLine("Host connected to cable cloud");
-                allDone.Set();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
         }
     }
 
