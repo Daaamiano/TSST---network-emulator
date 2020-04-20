@@ -20,6 +20,7 @@ namespace CableCloud
 
     class Tunnel
     {
+        
         public string incomingObject;
         public string destinationObject;
         public int destinationPort;
@@ -35,7 +36,7 @@ namespace CableCloud
     class CableCloud
     {
 
-
+        private Dictionary<string, Socket> connectedSockets = new Dictionary<string, Socket>();
         private static ManualResetEvent done = new ManualResetEvent(false);
         Dictionary<int, Tunnel> tunnels = new Dictionary<int, Tunnel>();
 
@@ -63,9 +64,20 @@ namespace CableCloud
 
                 while (true)
                 {
+                    int i = 0;
+                    i++;
                     done.Reset();
-                    Console.WriteLine("Waiting for a incomming connection...");
+                    Console.WriteLine("Waiting for a incomming connection...");                    
                     cloudSocket.BeginAccept(new AsyncCallback(AcceptCallback), cloudSocket);
+
+                    /*
+                    StateObject state = new StateObject();
+                    state.workSocket = cloudSocket;
+
+                    cloudSocket.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+                    */
+
+                    Console.WriteLine("polaczono z tyloma obiektami: " + i);
                     done.WaitOne();
                 }
 
@@ -93,22 +105,95 @@ namespace CableCloud
 
         private void ReadCallback(IAsyncResult ar)
         {
-            String content = String.Empty;
+            //String content = String.Empty;
 
             StateObject state = (StateObject)ar.AsyncState;
-            Socket handler = state.workSocket;
+            Socket handler = null;
+            handler = state.workSocket;
+            Package package = new Package();
 
-            int read = handler.EndReceive(ar);
-
-            if (read > 0)
+            try
             {
+                int read = handler.EndReceive(ar);
                 state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
 
-                content = state.sb.ToString();
+                var content = state.sb.ToString();
 
                 Console.WriteLine(content);
-                Package package = DeserializeFromJson(content);
+                package = DeserializeFromJson(content);
 
+                //slownik sucketow
+
+                if (package.message == "CONNECTED")
+                {
+                    // Send response message.
+                    Console.WriteLine($"Connection with {package.sourceName} established.");
+                    try
+                    {
+                        connectedSockets.Add(package.sourceName, handler);
+
+                        Console.WriteLine("dodano do tablicy socket: " + package.sourceName);
+
+                        //
+
+                        //state.workSocket = handler;
+                        //handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+                    }
+                    catch
+                    {
+                        // Skip adding if such key already exists -> the router is reconnecting.
+                    }
+                    Send(handler, content);
+                    //handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+                }
+                else
+                {
+                    //tunelowanie test
+                    Console.WriteLine("incoming port");
+                    Console.WriteLine(package.incomingPort);
+
+
+                    //tunelowanie test 
+                    Console.WriteLine("destination port tunelu");
+                    Console.WriteLine(tunnels[package.incomingPort].destinationPort);
+
+                    //tunelowanie test 
+                    Console.WriteLine("new incoming port");
+                    Console.WriteLine(tunnels[package.incomingPort].destinationPort);
+                    package.incomingPort = tunnels[package.incomingPort].destinationPort;
+
+                    //serializacja pakietu z nowym incoming port
+                    content = SerializeToJson(package);
+
+                    /*
+                    // przesylanie wiadomosci na nowy port  trzeba 3x odpalic VS host, chmura do przeslania, chmura do odbioru (zamiast routera)               * 
+                    handler.Shutdown(SocketShutdown.Both);
+                    handler.Close();
+                    Console.WriteLine("write port number to resend the message (new incomiing port)");
+                    string port = Console.ReadLine();
+                    int result = Int32.Parse(port);
+                    IPAddress address = IPAddress.Parse("127.0.0.1");
+                    Socket sendSocket = new Socket(address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    state.workSocket = sendSocket;
+                    sendSocket.BeginConnect(new IPEndPoint(address, result),
+                    //sendSocket.BeginConnect(new IPEndPoint(address, tunnels[].destinationPort),
+                    new AsyncCallback(ConnectionCallBack), sendSocket);
+                    */
+
+
+                    Console.WriteLine("Read {0} bytes from socket. \n Data : {1}", content.Length, content);
+
+
+                    // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
+                    //Send(connectedSockets[package.sourceName], content); // to jak przesylanie wiadomosci na nowy port
+                    Send(handler, content); // to jak chcemy wyslac echo
+
+
+                }
+                state.sb.Clear();
+                handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
+
+                /*
                 //tunelowanie test
                 Console.WriteLine("incoming port");
                 Console.WriteLine(package.incomingPort);
@@ -152,8 +237,17 @@ namespace CableCloud
                 {
                     handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
+                */
+            }            
+            catch(Exception e)
+            {
+                //var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
+                //Console.WriteLine(exceptionTrace);
+                Console.WriteLine("Connection with router lost." );
+                handler.Shutdown(SocketShutdown.Both);
+                handler.Close();
             }
-        }
+}
 
         private void LoadTunnels(string configFilePath)
         {
@@ -203,8 +297,7 @@ namespace CableCloud
                 int sent = handler.EndSend(ar);
                 Console.WriteLine("Sent {0} bytes to client", sent);
 
-                handler.Shutdown(SocketShutdown.Both);
-                handler.Close();
+               
             }
             catch (Exception e)
             {
