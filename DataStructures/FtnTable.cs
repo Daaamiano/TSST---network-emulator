@@ -47,7 +47,7 @@ namespace DataStructures
                 file.WriteLine(routerName + "_ILM, {0}, {1}", fecAdd, idAdd);
             }
 
-            Console.WriteLine($"\nSaved {routerName} FTN table to file");
+            Console.WriteLine($"\nSaved {routerName} FTN table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)

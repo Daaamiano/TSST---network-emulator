@@ -47,7 +47,7 @@ namespace DataStructures
                 file.WriteLine(routerName + "_MPLSFIB, {0}, {1}", destPortAdd, fecAdd);
             }
 
-            Console.WriteLine($"\nSaved {routerName} MPLS-FIB table to file");
+            Console.WriteLine($"\nSaved {routerName} MPLS-FIB table to file.\n");
         }
  
         public void DeleteRowFromTable(string row, string tablePath)

@@ -45,7 +45,7 @@ namespace DataStructures
                 file.WriteLine(routerName + "_IPFIB, {0}, {1}", destAddressAdd, outPortAdd);
             }
 
-            Console.WriteLine($"\nSaved {routerName} IP-FIB table to file");
+            Console.WriteLine($"\nSaved {routerName} IP-FIB table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)

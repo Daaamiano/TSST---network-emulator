@@ -15,14 +15,6 @@ namespace DataStructures
         {
             string rowName = routerName + "_NHLFE";
             LoadTableFromFile(configFilePath, rowName);
-            //test
-            /*
-            Console.WriteLine("NHLFE {0}:", routerName);
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.Value.operation);
-            }
-            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)
@@ -66,10 +58,30 @@ namespace DataStructures
             entries.Add(idAdd, new NhlfeEntry(operationAdd, outLabelAdd, outPortAdd, nextIdAdd));
             using (StreamWriter file = new StreamWriter(tablePath, true))
             {
-                file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, outLabelAdd, outPortAdd, nextIdAdd);
+                if (outLabelAdd == null && outPortAdd == null && nextIdAdd == null)
+                {
+                    file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, "-", "-", "-");
+                }
+                else if (outLabelAdd == null)
+                {
+                    file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, "-", outPortAdd, nextIdAdd);
+                }
+                else if (outPortAdd == null)
+                {
+                    file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, outLabelAdd, "-", nextIdAdd);
+                }
+                else if (nextIdAdd == null)
+                {
+                    file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, outLabelAdd, outPortAdd, "-");
+                }
+                else
+                {
+                    file.WriteLine(routerName + "_NHLFE, {0}, {1}, {2}, {3}, {4}", idAdd, operationAdd, outLabelAdd, outPortAdd, nextIdAdd);
+                }
+
             }
 
-            Console.WriteLine($"\nSaved {routerName} NHLFE table to file");
+            Console.WriteLine($"\nSaved {routerName} NHLFE table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)
@@ -128,8 +140,32 @@ namespace DataStructures
             Console.WriteLine("Index, ID, Operation, OutLabel, OutPort, NextID");
             foreach (KeyValuePair<int, NhlfeEntry> kvp in entries)
             {
-                Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, kvp.Value.outLabel, kvp.Value.outPort, kvp.Value.nextId);
-                i++;
+                if (kvp.Value.outLabel == null && kvp.Value.outPort == null && kvp.Value.nextId == null)
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, "-", "-", "-");
+                    i++;
+                }
+                else if (kvp.Value.outLabel == null)
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, "-", kvp.Value.outPort, kvp.Value.nextId);
+                    i++;
+                }
+                else if (kvp.Value.outPort == null)
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, kvp.Value.outLabel, "-", kvp.Value.nextId);
+                    i++;
+                }
+                else if (kvp.Value.nextId == null)
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, kvp.Value.outLabel, kvp.Value.outPort, "-");
+                    i++;
+                }
+                else
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}, {4}", kvp.Key, kvp.Value.operation, kvp.Value.outLabel, kvp.Value.outPort, kvp.Value.nextId);
+                    i++;
+                }
+                
             }
         }
     }

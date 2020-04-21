@@ -44,6 +44,7 @@ namespace CableCloud
         {
             LoadTunnels(configFilePath);
             Start(5001);
+            Console.ReadLine();
         }
 
         public void Start(int myPort)

@@ -52,10 +52,17 @@ namespace DataStructures
             entries.Add(inLabelAdd, new IlmEntry(inPortAdd, poppedLabelAdd, idAdd));
             using (StreamWriter file = new StreamWriter(tablePath, true))
             {
-                file.WriteLine(routerName + "_ILM, {0}, {1}, {2}, {3}", inLabelAdd, inPortAdd, poppedLabelAdd, idAdd);
+                if (poppedLabelAdd == null)
+                {
+                    file.WriteLine(routerName + "_ILM, {0}, {1}, {2}, {3}", inLabelAdd, inPortAdd, "-", idAdd);
+                }
+                else
+                {
+                    file.WriteLine(routerName + "_ILM, {0}, {1}, {2}, {3}", inLabelAdd, inPortAdd, poppedLabelAdd, idAdd);
+                }
             }
 
-            Console.WriteLine($"\nSaved {routerName} ILM table to file");
+            Console.WriteLine($"\nSaved {routerName} ILM table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)
@@ -114,7 +121,16 @@ namespace DataStructures
             Console.WriteLine("Index, InLabel, InPort, PoppedLabel, ID");
             foreach (KeyValuePair<int, IlmEntry> kvp in entries)
             {
-                Console.WriteLine(i + ". {0}, {1}, {2}, {3}", kvp.Key, kvp.Value.inPort, kvp.Value.poppedLabel, kvp.Value.id);
+                if (kvp.Value.poppedLabel == null)
+                {
+                    
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}", kvp.Key, kvp.Value.inPort, "-", kvp.Value.id);
+                }
+                else
+                {
+                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}", kvp.Key, kvp.Value.inPort, kvp.Value.poppedLabel, kvp.Value.id);
+                }
+                
                 i++;
             }
         }
