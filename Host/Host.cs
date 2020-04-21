@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
-
+using System.Threading.Tasks;
 
 namespace Host
 {
@@ -38,73 +38,56 @@ namespace Host
         private static int destinationPort;
         private static IPAddress cableCloudIpAddress;
         private static ManualResetEvent allDone = new ManualResetEvent(false);
-        private static string response = String.Empty;
 
         public Host(string filePath)
         {
             LoadPropertiesFromFile(filePath);
             Console.Title = hostName;
             ConnectToCableCloud();
-
-            //StartHost();
         }
 
-        public static void StartHost(Socket cableCloudSocket)
+        public void StartHost(Socket cableCloudSocket)
         {
-            /*IPEndPoint localEndPoint = new IPEndPoint(cableCloudIpAddress, hostPort);
-            Socket recSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            try
-            {
-                recSocket.Bind(localEndPoint);
-                recSocket.Listen(100);
-                Console.WriteLine("Waiting for a incomming connection...");
-                recSocket.BeginAccept(new AsyncCallback(AcceptCallback), recSocket);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.ToString());
-            }
-            */
             while (true)
             {
+                Task.Run(action: () => ReceiveMessages());
                 Logs.ShowLog(LogType.INFO, "You are host " + hostName);
-                Console.WriteLine("Write '1'  if you want to send the message to another host ");
+                Console.WriteLine("\nWrite '1'  if you want to send the message to another host ");
 
                 int decision = int.Parse(Console.ReadLine());
                 if (decision == 1)
                 {
                     try
                     {
-                        /* Socket hostSocket = new Socket(cableCloudIpAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                         hostSocket.BeginConnect(new IPEndPoint(cableCloudIpAddress, cableCloudPort),
-                             new AsyncCallback(ConnectionCallBack), hostSocket); */
-
-                        Console.WriteLine("Choose which host you want to send the package to");
-                        Console.WriteLine(@"To do this, write 'H1' or 'H2' or 'H3' or 'H4' -> host 1 is 'H1' etc.");
-                        string nameDestinationHost = Console.ReadLine();
-                        if (nameDestinationHost == "H1")
+                        Console.WriteLine("\nChoose which host you want to send the package to: \n    1. H1 \n    2. H2 \n    3. H3 \n    4. H4");
+                        string choice = Console.ReadLine();
+                        if (choice == "1")
                         {
                             destinationPort = h1Port;
                             destAddress = ipAddressH1;
                         }
-                        else if (nameDestinationHost == "H2")
+                        else if (choice == "2")
                         {
                             destinationPort = h2Port;
                             destAddress = ipAddressH2;
                         }
-                        else if (nameDestinationHost == "H3")
+                        else if (choice == "3")
                         {
                             destinationPort = h3Port;
                             destAddress = ipAddressH3;
                         }
-                        else if (nameDestinationHost == "H4")
+                        else if (choice == "4")
                         {
                             destinationPort = h4Port;
                             destAddress = ipAddressH4;
                         }
+                        else
+                        {
+                            Console.WriteLine("\nNo such host connected. Try again.");
+                            continue;
+                        }
 
-                        Send(cableCloudSocket, $"Test taki o se {DateTime.Now} port docelowy to {destinationPort}");
-                        
+                        Send(cableCloudSocket, $"{DateTime.Now} Destination port: {destinationPort}");
                         allDone.WaitOne();
                     }
                     catch (Exception e)
@@ -154,9 +137,8 @@ namespace Host
 
                     if (message.Contains("CONNECTED"))
                     {
-                        Logs.ShowLog(LogType.CONNECTED, "Connected to cable cloud.");
+                        Logs.ShowLog(LogType.CONNECTED, "Connected to cable cloud.");                    
                         StartHost(cableCloudSocket);
-                        ReceiveMessages();
                         break;
 
                     }
@@ -176,42 +158,9 @@ namespace Host
                 byte[] buffer = new byte[1024];
                 int bytes = cableCloudSocket.Receive(buffer);
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                Logs.ShowLog(LogType.INFO, "Received from cable cloud: {0}" + message); //czy message jest string?
+                Logs.ShowLog(LogType.INFO, "Received from cable cloud: {0}" + message); 
             }
         }
-        /*
-        private static void AcceptCallback(IAsyncResult ar)
-        {
-            allDone.Set();
-
-            Socket cloudSocketListener = (Socket)ar.AsyncState;
-            Socket cloudSocketHandler = cloudSocketListener.EndAccept(ar);
-
-            ObjectState state = new ObjectState();
-            state.workSocket = cloudSocketHandler;
-            cloudSocketHandler.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0, 
-                new AsyncCallback(ReadCallback), state);
-        }
-
-        private static void ReadCallback(IAsyncResult ar)
-        {
-            String content = String.Empty;
-
-            ObjectState state = (ObjectState)ar.AsyncState;
-            Socket handler = state.workSocket;
-
-            int read = handler.EndReceive(ar);
-
-            if (read > 0)
-            {
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
-
-                content = state.sb.ToString();
-                Console.WriteLine(content);
-                Package package = DeserializeFromJson(content);
-            }
-        }
-        */
 
         private void LoadPropertiesFromFile(string filePath)
         {
@@ -263,53 +212,9 @@ namespace Host
                 ipAddressH3 = IPAddress.Parse(properties["IPADDRESSH3"]);
             }
         }
-        /*
-        private static void Receive(Socket hostSocket)
-        {
-            try
-            {
-                ObjectState state = new ObjectState();
-                state.workSocket = hostSocket;
-                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-        }
-        */
-        private static void ReceiveCallback(IAsyncResult ar)
-        {
-            ObjectState state = (ObjectState)ar.AsyncState;
-            var hostSocket = state.workSocket;
-            int byteRead = hostSocket.EndReceive(ar);
-            if (byteRead > 0)
-            {
-                state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, byteRead));
-
-                String content = String.Empty;
-                content = state.sb.ToString();
-                Package package = DeserializeFromJson(content);
-                Console.WriteLine(package.message);
-
-                hostSocket.BeginReceive(state.buffer, 0, ObjectState.bufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            else
-            {
-                if (state.sb.Length > 1)
-                {
-                    response = state.sb.ToString();
-                }
-
-                allDone.Set();
-            }
-        }
 
         private static void Send(Socket hostSocket, string data)
         {
-            //public Package(int sourcePort, string destAddress, int destPort, string message)
             Package package = new Package(hostName, hostPort, destAddress.ToString(), destinationPort, data);
             string json = SerializeToJson(package);
             Logs.ShowLog(LogType.INFO, ("Sending package to cable cloud: \n" + json));
