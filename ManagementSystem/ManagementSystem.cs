@@ -52,6 +52,7 @@ namespace ManagementSystem
         {
             var t = Task.Run(action: () => ListenForConnections());
             //t.Wait();
+            Thread.Sleep(1000);
             handleInput();
         }
 
@@ -468,7 +469,7 @@ namespace ManagementSystem
 
         private void ListenForConnections()
         {
-            Console.WriteLine("Awaiting connection...");
+            Logs.ShowLog(LogType.INFO, "Awaiting connection...");
             msSocket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             try
             {
@@ -496,10 +497,6 @@ namespace ManagementSystem
             Socket listener = (Socket)ar.AsyncState;
             Socket handler = listener.EndAccept(ar);
 
-            /*if (handler != null)
-            {
-                connectedSockets.Add(handler);
-            }*/
             // Create the state object.  
             StateObject state = new StateObject
             {
@@ -526,7 +523,7 @@ namespace ManagementSystem
                 if (receivedPackage.message == "CONNECTED")
                 {
                     // Send response message.
-                    Console.WriteLine($"Connection with {receivedPackage.sourceName} established.");
+                    Logs.ShowLog(LogType.CONNECTED, $"Connection with {receivedPackage.sourceName} established.");
                     try
                     {
                         connectedSockets.Add(receivedPackage.sourceName, handler);
@@ -539,7 +536,7 @@ namespace ManagementSystem
                 }
                 else
                 {
-                    Console.WriteLine($"Unknown message received: {content}");
+                    Logs.ShowLog(LogType.ERROR, $"Unknown message received: {content}");
                 }
                 state.sb.Clear();
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
@@ -550,7 +547,7 @@ namespace ManagementSystem
                 //var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
                 //Console.WriteLine(exceptionTrace);
                 var myKey = connectedSockets.FirstOrDefault(x => x.Value == handler).Key;
-                Console.WriteLine($"Connection with {myKey} lost.");
+                Logs.ShowLog(LogType.INFO, $"Connection with {myKey} lost.");
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
             }
@@ -573,11 +570,11 @@ namespace ManagementSystem
             }
             catch(KeyNotFoundException)
             {
-                Console.WriteLine($"Router {routerName} is not connected.");
+                Logs.ShowLog(LogType.ERROR, $"Router {routerName} is not connected.");
             }
             catch
             {
-                Console.WriteLine("Couldn't send message.");
+                Logs.ShowLog(LogType.ERROR, "Couldn't send message.");
             }
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -42,17 +43,15 @@ namespace Router
 
         public void Start()
         {
-            ConnectToManagementSystem();
-            //var t = Task.Run(action: () => ConnectToManagementSystem());
-            //ConnectToCloud();
-            Console.ReadLine();
+            Task.Run(action: () => ConnectToManagementSystem());
+            ConnectToCloud();
         }
 
         private void ConnectToCloud()
         {
             while (true)
             {
-                Console.WriteLine("Connecting to cable cloud...");
+                Logs.ShowLog(LogType.INFO, "Connecting to cable cloud...");
                 cableCloudSocket = new Socket(cloudAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
@@ -61,27 +60,28 @@ namespace Router
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Couldn't connect to cable cloud.");
-                    Console.WriteLine("Retrying...");
+                    Logs.ShowLog(LogType.ERROR, "Couldn't connect to cable cloud.");
+                    Logs.ShowLog(LogType.INFO, "Retrying...");
                     Thread.Sleep(5000);
                     continue;
                 }
 
                 try
                 {
-                    /*while (true)
+                    Console.WriteLine("Sending CONNECTED to cable cloud...");
+                    Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
+                    string connectedMessage = "CONNECTED";
+                    Package connectedCheckPackage = new Package(routerName, cloudAddress.ToString(), cloudPort, connectedMessage);
+                    cableCloudSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(connectedCheckPackage)));
+                    while (true)
                     {
                         handleMessageFromCloud();
-                        
-                    }*/
-                    Package testpackage = new Package(1010, cloudAddress.ToString(), cloudPort, "TESTOWA WIADOMOŚĆ");
-                    SendPackageToCloud(testpackage);
-                    break;
+                    }
                 }
                 catch (Exception)
                 {
                     //Console.WriteLine(e.Source);
-                    Console.WriteLine("Connection to cable cloud lost.");
+                    Logs.ShowLog(LogType.INFO, "Connection to cable cloud lost.");
                 }
             }
         }
@@ -90,7 +90,7 @@ namespace Router
         {
             while (true)
             {
-                Console.WriteLine("Connecting to management system...");
+                Logs.ShowLog(LogType.INFO, "Connecting to management system...");
                 managementSystemSocket = new Socket(managementSystemAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 try
                 {
@@ -99,15 +99,15 @@ namespace Router
                 }
                 catch (Exception)
                 {
-                    Console.WriteLine("Couldn't connect to management system.");
-                    Console.WriteLine("Retrying...");
+                    Logs.ShowLog(LogType.ERROR, "Couldn't connect to management system.");
+                    Logs.ShowLog(LogType.INFO, "Retrying...");
                     Thread.Sleep(5000);
                     continue;
                 }
 
                 try
                 {
-                    Console.WriteLine("Sending CONNECTED to management system...");
+                    Logs.ShowLog(LogType.INFO, "Sending CONNECTED to management system...");
                     string connectedMessage = "CONNECTED";
                     Package connectedCheckPackage = new Package(routerName, managementSystemAddress.ToString(), managementSystemPort, connectedMessage);
                     managementSystemSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(connectedCheckPackage)));
@@ -119,37 +119,50 @@ namespace Router
                 catch (Exception)
                 {
                     //Console.WriteLine(e.Source);
-                    Console.WriteLine("Connection to management system lost.");
+                    Logs.ShowLog(LogType.INFO, "Connection to management system lost.");
                 }
             }
         }
 
         private void handleMessageFromCloud()
         {
-            try
+            Package receivedPackage = ReceiveMessageFrom(cableCloudSocket);
+
+            if (receivedPackage.message.Contains("CONNECTED"))
             {
-                Package receivedPackage = ReceiveMessage();
-                Route(receivedPackage);
-                SendPackageToCloud(receivedPackage);
+                Logs.ShowLog(LogType.CONNECTED, "Connected to cable cloud.");
             }
-            catch (Exception)
+            else
             {
-                Console.WriteLine("Couldn't perform routing for received package.");
+                try
+                {
+                    Logs.ShowLog(LogType.INFO, "Received a package from cable cloud.");
+                    Route(receivedPackage);
+                    SendPackageToCloud(receivedPackage);
+                    Logs.ShowLog(LogType.INFO, "Sent routed package to cable cloud.");
+                }
+                catch (Exception e)
+                {
+                    var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
+                    Console.WriteLine(exceptionTrace);
+                    Logs.ShowLog(LogType.ERROR, "Couldn't perform routing.");
+                }
             }
+
         }
 
         private void handleResponseFromMS()
         {
-            Package receivedPackage = ReceiveMessage();
+            Package receivedPackage = ReceiveMessageFrom(managementSystemSocket);
 
             if (receivedPackage.message.Contains("CONNECTED"))
             {
-                Console.WriteLine("Connected to management system.");
+                Logs.ShowLog(LogType.INFO, "Connected to management system.");
             }
             else if (receivedPackage.message.Contains("RELOAD TABLES"))
             {
                 Console.WriteLine(SerializeToJson(receivedPackage));
-                Console.WriteLine("Received RELOAD TABLES command from MS.");
+                Logs.ShowLog(LogType.INFO, "Received RELOAD TABLES command from MS.");
                 LoadTablesFromFile(routerTablesFilePath);
             }
             else
@@ -158,13 +171,20 @@ namespace Router
             }
         }
 
-        private Package ReceiveMessage()
+        private Package ReceiveMessageFrom(Socket socket)
         {
-            byte[] buffer = new byte[256];
-            int bytes = managementSystemSocket.Receive(buffer);
-            var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-            Package receivedPackage = DeserializeFromJson(message);
-            return receivedPackage; 
+            try
+            {
+                byte[] buffer = new byte[1024];
+                int bytes = socket.Receive(buffer);
+                var message = Encoding.ASCII.GetString(buffer, 0, bytes);
+                Package receivedPackage = DeserializeFromJson(message);
+                return receivedPackage;
+            }
+            catch
+            {
+                return new Package();
+            }
         }
 
         private void LoadPropertiesFromFile(string configFilePath)
@@ -223,14 +243,14 @@ namespace Router
         {
             if (nhlfeEntry.outLabel == null)
             {
-                Console.WriteLine($"Invalid NHLFE entry for router {routerName}. outLabel null.");
+                Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}. outLabel null.");
                 return;
             }
             else if (nhlfeEntry.outPort == null)
             {
                 if (nhlfeEntry.nextId == null)
                 {
-                    Console.WriteLine($"Invalid NHLFE entry for router {routerName}. outPort and nextId null.");
+                    Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}. outPort and nextId null.");
                     return;
                 }
                 package.labels.Add((int)nhlfeEntry.outLabel);
@@ -239,12 +259,13 @@ namespace Router
             }
             else if (nhlfeEntry.nextId == null)
             {
+                package.labels.Add((int)nhlfeEntry.outLabel);
                 package.incomingPort = (int)nhlfeEntry.outPort;
                 // send to cloud
             }
             else
             {
-                Console.WriteLine($"Invalid NHLFE entry for router {routerName}. All 3 values not null.");
+                Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}. All 3 values not null.");
                 return;
             }
         }
@@ -253,7 +274,7 @@ namespace Router
         {
             if (nhlfeEntry.outLabel != null && nhlfeEntry.outPort != null && nhlfeEntry.nextId != null)
             {
-                Console.WriteLine($"Invalid NHLFE entry for router {routerName}. outLabel, outPort or nextId  NOT null.");
+                Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}. outLabel, outPort or nextId  NOT null.");
                 return;
             }
             if (package.labels.Any())
@@ -265,7 +286,7 @@ namespace Router
                     var ilmEntry = ilmTable.entries[package.labels.Last()];
                     if (package.incomingPort != ilmEntry.inPort)
                     {
-                        Console.WriteLine($"inPort and incomingPort are not equal for router {routerName}.");
+                        Logs.ShowLog(LogType.ERROR, $"inPort and incomingPort are not equal for router {routerName}.");
                         return;
                     }
                     var newNhlfeEntry = nhlfeTable.entries[ilmEntry.id];
@@ -295,7 +316,7 @@ namespace Router
             }
             else
             {
-                Console.WriteLine("No label to pop found.");
+                Logs.ShowLog(LogType.ERROR, "No label to pop found.");
             }
         }
 
@@ -322,29 +343,29 @@ namespace Router
         {
             if (!package.labels.Any())
             {
-                Console.WriteLine("No label found.");
+                Logs.ShowLog(LogType.ERROR, "No label found.");
                 return;
             }
             var ilmEntry = ilmTable.entries[package.labels.Last()];
             if (package.incomingPort != ilmEntry.inPort)
             {
-                Console.WriteLine($"inPort and incomingPort are not equal for router {routerName}.");
+                Logs.ShowLog(LogType.ERROR, $"inPort and incomingPort are not equal for router {routerName}.");
                 return;
             }
             if (ilmEntry.poppedLabel != null)
             {
-                Console.WriteLine($"poppedLabel is not null for router {routerName}.");
+                Logs.ShowLog(LogType.ERROR, $"poppedLabel is not null for router {routerName}.");
                 return;
             }
             var nhlfeEntry = nhlfeTable.entries[ilmEntry.id];
             if (nhlfeEntry.operation != "SWAP")
             {
-                Console.WriteLine($"Invalid NHLFE entry for router {routerName}. Different operation than SWAP found.");
+                Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}. Different operation than SWAP found.");
                 return;
             }
             else if (nhlfeEntry.outLabel == null || nhlfeEntry.outPort == null || nhlfeEntry.nextId != null)
             {
-                Console.WriteLine($"Invalid NHLFE entry for router {routerName}.");
+                Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}.");
                 return;
             }
             else
@@ -370,7 +391,7 @@ namespace Router
                     var nhlfeEntry = nhlfeTable.entries[ftnEntry.id];
                     if (nhlfeEntry.operation != "PUSH")
                     {
-                        Console.WriteLine($"Invalid NHLFE entry for router {routerName}.");
+                        Logs.ShowLog(LogType.ERROR, $"Invalid NHLFE entry for router {routerName}.");
                         return;
                     }
                     PushLabel(package, nhlfeEntry);
@@ -386,11 +407,11 @@ namespace Router
                 }
                 // tutaj np. jest R3. Tam moze byc lub nie poppedLabel, ale znowu - przez nasze tablice to nic nie wnosi,
                 // czy poppedLabel jest.
-                /*if (ilmEntry.poppedLabel != null)
+                if (ilmEntry.poppedLabel != null)
                 {
                     Console.WriteLine($"poppedLabel is not null for router {routerName}.");
                     return;
-                }*/
+                }
                 var nhlfeEntry = nhlfeTable.entries[ilmEntry.id];
                 switch(nhlfeEntry.operation)
                 {
@@ -415,7 +436,7 @@ namespace Router
             }
             catch (Exception)
             {
-                Console.WriteLine("Couldn't send package to cable cloud.");
+                Logs.ShowLog(LogType.ERROR, "Couldn't send package to cable cloud.");
             }
         }
     }

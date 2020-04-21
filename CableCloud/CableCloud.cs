@@ -20,7 +20,7 @@ namespace CableCloud
 
     class Tunnel
     {
-        
+
         public string incomingObject;
         public string destinationObject;
         public int destinationPort;
@@ -43,9 +43,9 @@ namespace CableCloud
 
         public CableCloud(string configFilePath)
         {
+            Console.Title = "CableCloud";
             LoadTunnels(configFilePath);
             Start(5001);
-            Console.ReadLine();
         }
 
         public void Start(int myPort)
@@ -65,7 +65,7 @@ namespace CableCloud
                 while (true)
                 {
                     done.Reset();
-                    Logs.ShowLog(LogType.INFO, "Waiting for a incomming connection...");                    
+                    Logs.ShowLog(LogType.INFO, "Waiting for a incomming connection...");
                     cloudSocket.BeginAccept(new AsyncCallback(AcceptCallback), cloudSocket);
 
                     /*
@@ -75,7 +75,7 @@ namespace CableCloud
                     cloudSocket.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                     */
 
-                    
+
                     done.WaitOne();
                 }
 
@@ -180,12 +180,13 @@ namespace CableCloud
                     */
 
 
-                    Logs.ShowLog(LogType.INFO, ("Sent {" + content.Length.ToString() + "} bytes to client. \n Data : "+ content));
+                    //Logs.ShowLog(LogType.INFO, ("Sent {" + content.Length.ToString() + "} bytes to client. \n Data : " + content));
 
 
                     // jak przesylanie wiadomosci dalej to handler zamienic na sendSocket
-                    //Send(connectedSockets[package.sourceName], content); // to jak przesylanie wiadomosci na nowy port
-                    Send(handler, content); // to jak chcemy wyslac echo
+                    Console.WriteLine("wysylam na router::   " + tunnels[package.incomingPort].incomingObject);
+                    Send(connectedSockets[tunnels[package.incomingPort].incomingObject], content); // to jak przesylanie wiadomosci na nowy port
+                    //Send(handler, content); // to jak chcemy wyslac echo
 
 
                 }
@@ -237,16 +238,16 @@ namespace CableCloud
                     handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
                 */
-            }            
-            catch(Exception e)
+            }
+            catch (Exception e)
             {
                 //var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
                 //Console.WriteLine(exceptionTrace);
-                Logs.ShowLog(LogType.ERROR, "Connection with router lost." );
+                Logs.ShowLog(LogType.ERROR, "Connection with router lost.");
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
             }
-}
+        }
 
         private void LoadTunnels(string configFilePath)
         {
@@ -254,15 +255,15 @@ namespace CableCloud
             {
 
                 var splitRow = row.Split(", ");
-                if (splitRow[0] =="#X" )
+                if (splitRow[0] == "#X")
                 {
                     continue;
                 }
-               //Console.WriteLine(splitRow[0]);
+                //Console.WriteLine(splitRow[0]);
                 //Console.Read();
                 //Console.WriteLine(splitRow[0] + " " + splitRow[1] + " " + int.Parse(splitRow[2]) + " " + splitRow[3]);
                 tunnels.Add(int.Parse(splitRow[0]), new Tunnel(splitRow[1], int.Parse(splitRow[2]), splitRow[3]));
-            }            
+            }
         }
 
         private void Send(Socket handler, string content)
@@ -296,9 +297,9 @@ namespace CableCloud
                 Socket handler = (Socket)ar.AsyncState;
 
                 int sent = handler.EndSend(ar);
-                Logs.ShowLog(LogType.INFO, "Sent {" + sent.ToString() +"} bytes to client");
+                Logs.ShowLog(LogType.INFO, "Sent {" + sent.ToString() + "} bytes to client");
 
-               
+
             }
             catch (Exception e)
             {
