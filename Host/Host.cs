@@ -86,8 +86,9 @@ namespace Host
                             Console.WriteLine("\nNo such host connected. Try again.");
                             continue;
                         }
-
-                        Send(cableCloudSocket, $"{DateTime.Now} Destination port: {destinationPort}");
+                        Console.WriteLine("Write message");
+                        string message = Console.ReadLine().ToString();
+                        Send(cableCloudSocket, $"{DateTime.Now} :: Message: " + message);
                         allDone.WaitOne();
                     }
                     catch (Exception e)
@@ -177,6 +178,8 @@ namespace Host
 
             if (hostName == "H1")
             {
+                h1Port = int.Parse(properties["HOSTPORT"]);
+                ipAddressH1 = IPAddress.Parse(properties["IPSOURCEADDRESS"]);
                 h2Port = int.Parse(properties["H2PORT"]);
                 ipAddressH2 = IPAddress.Parse(properties["IPADDRESSH2"]);
                 h3Port = int.Parse(properties["H3PORT"]);
@@ -186,6 +189,8 @@ namespace Host
             }
             else if (hostName == "H2")
             {
+                h2Port = int.Parse(properties["HOSTPORT"]);
+                ipAddressH2 = IPAddress.Parse(properties["IPSOURCEADDRESS"]);
                 h1Port = int.Parse(properties["H1PORT"]);
                 ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
                 h3Port = int.Parse(properties["H3PORT"]);
@@ -195,6 +200,8 @@ namespace Host
             }
             else if (hostName == "H3")
             {
+                h3Port = int.Parse(properties["HOSTPORT"]);
+                ipAddressH3 = IPAddress.Parse(properties["IPSOURCEADDRESS"]);
                 h1Port = int.Parse(properties["H1PORT"]);
                 ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
                 h2Port = int.Parse(properties["H2PORT"]);
@@ -204,6 +211,8 @@ namespace Host
             }
             else if (hostName == "H4")
             {
+                h4Port = int.Parse(properties["HOSTPORT"]);
+                ipAddressH4 = IPAddress.Parse(properties["IPSOURCEADDRESS"]);
                 h1Port = int.Parse(properties["H1PORT"]);
                 ipAddressH1 = IPAddress.Parse(properties["IPADDRESSH1"]);
                 h2Port = int.Parse(properties["H2PORT"]);
