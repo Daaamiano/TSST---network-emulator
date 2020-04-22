@@ -13,14 +13,6 @@ namespace DataStructures
         {
             string rowName = routerName + "_IPFIB";
             LoadTableFromFile(configFilePath, rowName);
-            //test
-            /*
-            Console.WriteLine("IPFIB {0}:", routerName);
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.Value.outPort);
-            }
-            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)

@@ -15,14 +15,6 @@ namespace DataStructures
         {
             string rowName = routerName + "_FTN";
             LoadTableFromFile(configFilePath, rowName);
-            //testy
-            /*
-            Console.WriteLine("FTN {0}:", routerName);
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.Value.id);
-            }
-            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)

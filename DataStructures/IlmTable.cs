@@ -9,20 +9,12 @@ namespace DataStructures
         // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę,
         // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
         // Kluczem jest inLabel.
-        public Dictionary<int, IlmEntry> entries = new Dictionary<int, IlmEntry>();
+        public Dictionary<string, IlmEntry> entries = new Dictionary<string, IlmEntry>();
 
         public IlmTable(string configFilePath, string routerName)
         {
             string rowName = routerName + "_ILM";
             LoadTableFromFile(configFilePath, rowName);
-            // test:
-            /*
-            Console.WriteLine("ILM {0}: ", routerName);
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.Value.inPort);
-            } 
-            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)
@@ -34,22 +26,24 @@ namespace DataStructures
                 {
                     continue;
                 }
-                else if (splitRow[3] == "-")
-                {
-                    var entry = new IlmEntry(int.Parse(splitRow[2]), null, int.Parse(splitRow[4]));
-                    entries.Add(int.Parse(splitRow[1]), entry);
-                }
-                else
-                {
-                    var entry = new IlmEntry(int.Parse(splitRow[2]), int.Parse(splitRow[3]), int.Parse(splitRow[4]));
-                    entries.Add(int.Parse(splitRow[1]), entry);
-                }
+                var entry = new IlmEntry(int.Parse(splitRow[4]));
+                var key = splitRow[1] + ", " + splitRow[2] + ", " + splitRow[3];
+                entries.Add(key, entry);
             }
         }
 
         public void AddRowToTable(string tablePath, string routerName, int inLabelAdd, int inPortAdd, int? poppedLabelAdd, int idAdd)
         {
-            entries.Add(inLabelAdd, new IlmEntry(inPortAdd, poppedLabelAdd, idAdd));
+            string key;
+            if (poppedLabelAdd == null)
+            {
+                key = $"{inLabelAdd}, {inPortAdd}, -";
+            }
+            else
+            {
+                key = $"{inLabelAdd}, {inPortAdd}, {poppedLabelAdd}";
+            }
+            entries.Add(key, new IlmEntry(idAdd));
             using (StreamWriter file = new StreamWriter(tablePath, true))
             {
                 if (poppedLabelAdd == null)
@@ -61,14 +55,13 @@ namespace DataStructures
                     file.WriteLine(routerName + "_ILM, {0}, {1}, {2}, {3}", inLabelAdd, inPortAdd, poppedLabelAdd, idAdd);
                 }
             }
-
-            Console.WriteLine($"\nSaved {routerName} ILM table to file.\n");
+            Logs.ShowLog(LogType.INFO, $"\nSaved{routerName}ILM table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)
         {
             int counter = 1;
-            entries.Remove(int.Parse(row));
+            entries.Remove(row);
             try
             {
                 string[] lines = File.ReadAllLines(tablePath);
@@ -76,13 +69,12 @@ namespace DataStructures
                 {
                     var splitRow = entry.Split(", ");
 
-                    if (splitRow.Length == 1)
+                    if (splitRow.Length<4)
                     {
                         counter++;
                         continue;
                     }
-
-                    if (splitRow[1] == row)
+                    if ((splitRow[1] + ", " + splitRow[2] + ", " + splitRow[3]) == row)
                     {
                         break;
                     }
@@ -105,7 +97,7 @@ namespace DataStructures
                             writer.WriteLine(lines[currentLine - 1]);
                         }
                     }
-                    Console.WriteLine("Deleted entry from.");
+                    Logs.ShowLog(LogType.INFO, "\nDeleted entry.\n");
                 }
 
             }
@@ -119,18 +111,9 @@ namespace DataStructures
         {
             int i = 1;
             Console.WriteLine("Index, InLabel, InPort, PoppedLabel, ID");
-            foreach (KeyValuePair<int, IlmEntry> kvp in entries)
+            foreach (KeyValuePair<string, IlmEntry> kvp in entries)
             {
-                if (kvp.Value.poppedLabel == null)
-                {
-                    
-                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}", kvp.Key, kvp.Value.inPort, "-", kvp.Value.id);
-                }
-                else
-                {
-                    Console.WriteLine(i + ". {0}, {1}, {2}, {3}", kvp.Key, kvp.Value.inPort, kvp.Value.poppedLabel, kvp.Value.id);
-                }
-                
+                Console.WriteLine(i + ". {0}, {1}", kvp.Key, kvp.Value.id);
                 i++;
             }
         }

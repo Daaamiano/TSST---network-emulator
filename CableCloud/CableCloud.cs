@@ -140,7 +140,7 @@ namespace CableCloud
                     }
                     catch
                     {
-                        // Skip adding if such key already exists -> the router is reconnecting.
+                        Logs.ShowLog(LogType.CONNECTED, $"Router {package.sourceName} reconnected.");
                     }
                     Send(handler, content);
                     //handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);

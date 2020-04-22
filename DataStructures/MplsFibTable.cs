@@ -15,14 +15,6 @@ namespace DataStructures
         {
             string rowName = routerName + "_MPLSFIB";
             LoadTableFromFile(configFilePath, rowName);
-            //test
-            /*
-            Console.WriteLine("MPLS {0}:", routerName);
-            foreach (var entry in entries)
-            {
-                Console.WriteLine(entry.Value.fec);
-            }
-            */
         }
 
         private void LoadTableFromFile(string configFilePath, string rowName)

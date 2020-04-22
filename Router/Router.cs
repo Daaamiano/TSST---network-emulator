@@ -19,7 +19,6 @@ namespace Router
         private Socket cableCloudSocket;
 
         public string routerName;
-        private IPAddress ipAddress;        // adres IP danego routera
         private IPAddress cloudAddress;
         private int cloudPort;
         private IPAddress managementSystemAddress;
@@ -32,6 +31,7 @@ namespace Router
         private NhlfeTable nhlfeTable;
 
         private string routerTablesFilePath;
+        private int poppedLabel = 0;
 
         public Router(string routerConfigFilePath, string tablesConfigFilePath)
         {
@@ -75,7 +75,7 @@ namespace Router
                     cableCloudSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(connectedCheckPackage)));
                     while (true)
                     {
-                        handleMessageFromCloud();
+                        HandleMessageFromCloud();
                     }
                 }
                 catch (Exception)
@@ -113,7 +113,7 @@ namespace Router
                     managementSystemSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(connectedCheckPackage)));
                     while (true)
                     {
-                        handleResponseFromMS();
+                        HandleResponseFromMS();
                     }
                 }
                 catch (Exception)
@@ -124,11 +124,11 @@ namespace Router
             }
         }
 
-        private void handleMessageFromCloud()
+        private void HandleMessageFromCloud()
         {
             Package receivedPackage = ReceiveMessageFrom(cableCloudSocket);
 
-            if (receivedPackage.message.Contains("CONNECTED"))
+            if (receivedPackage.message == "CONNECTED")
             {
                 Logs.ShowLog(LogType.CONNECTED, "Connected to cable cloud.");
             }
@@ -139,6 +139,7 @@ namespace Router
                     Logs.ShowLog(LogType.INFO, "Received a package from cable cloud.");
                     Route(receivedPackage);
                     SendPackageToCloud(receivedPackage);
+                    poppedLabel = 0;
                     Logs.ShowLog(LogType.INFO, "Sent routed package to cable cloud.");
                 }
                 catch (Exception e)
@@ -151,17 +152,16 @@ namespace Router
 
         }
 
-        private void handleResponseFromMS()
+        private void HandleResponseFromMS()
         {
             Package receivedPackage = ReceiveMessageFrom(managementSystemSocket);
 
-            if (receivedPackage.message.Contains("CONNECTED"))
+            if (receivedPackage.message == "CONNECTED")
             {
                 Logs.ShowLog(LogType.INFO, "Connected to management system.");
             }
-            else if (receivedPackage.message.Contains("RELOAD TABLES"))
+            else if (receivedPackage.message == "RELOAD TABLES")
             {
-                Console.WriteLine(SerializeToJson(receivedPackage));
                 Logs.ShowLog(LogType.INFO, "Received RELOAD TABLES command from MS.");
                 LoadTablesFromFile(routerTablesFilePath);
             }
@@ -173,18 +173,18 @@ namespace Router
 
         private Package ReceiveMessageFrom(Socket socket)
         {
-            try
-            {
+            //try
+            //{
                 byte[] buffer = new byte[1024];
                 int bytes = socket.Receive(buffer);
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
                 Package receivedPackage = DeserializeFromJson(message);
                 return receivedPackage;
-            }
-            catch
-            {
-                return new Package();
-            }
+            //}
+            //catch
+            //{
+            //    return new Package();
+            //}
         }
 
         private void LoadPropertiesFromFile(string configFilePath)
@@ -195,7 +195,6 @@ namespace Router
                 properties.Add(row.Split('=')[0], row.Split('=')[1]);
             }
             routerName = properties["ROUTERNAME"];
-            ipAddress = IPAddress.Parse(properties["IPADDRESS"]);
             managementSystemAddress = IPAddress.Parse(properties["MANAGEMENTSYSTEMADDRESS"]);
             cloudAddress = IPAddress.Parse(properties["CLOUDADDRESS"]);
             managementSystemPort = int.Parse(properties["MANAGEMENTSYSTEMPORT"]);
@@ -279,16 +278,12 @@ namespace Router
             }
             if (package.labels.Any())
             {
-                //var poppedLabel = package.labels[package.labels.Count - 1];
+                poppedLabel = package.labels[package.labels.Count - 1];
                 package.labels.RemoveAt(package.labels.Count - 1);
                 if (package.labels.Any())
                 {
-                    var ilmEntry = ilmTable.entries[package.labels.Last()];
-                    if (package.incomingPort != ilmEntry.inPort)
-                    {
-                        Logs.ShowLog(LogType.ERROR, $"inPort and incomingPort are not equal for router {routerName}.");
-                        return;
-                    }
+                    IlmEntry ilmEntry;
+                    ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, {poppedLabel}"];
                     var newNhlfeEntry = nhlfeTable.entries[ilmEntry.id];
                     switch (newNhlfeEntry.operation)
                     {
@@ -346,16 +341,14 @@ namespace Router
                 Logs.ShowLog(LogType.ERROR, "No label found.");
                 return;
             }
-            var ilmEntry = ilmTable.entries[package.labels.Last()];
-            if (package.incomingPort != ilmEntry.inPort)
+            IlmEntry ilmEntry;
+            if (poppedLabel == 0)
             {
-                Logs.ShowLog(LogType.ERROR, $"inPort and incomingPort are not equal for router {routerName}.");
-                return;
+                ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, -"];
             }
-            if (ilmEntry.poppedLabel != null)
+            else
             {
-                Logs.ShowLog(LogType.ERROR, $"poppedLabel is not null for router {routerName}.");
-                return;
+                ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, {poppedLabel}"];
             }
             var nhlfeEntry = nhlfeTable.entries[ilmEntry.id];
             if (nhlfeEntry.operation != "SWAP")
@@ -399,18 +392,14 @@ namespace Router
             }
             else
             {
-                var ilmEntry = ilmTable.entries[package.labels.Last()];
-                if (package.incomingPort != ilmEntry.inPort)
+                IlmEntry ilmEntry;
+                if (poppedLabel == 0)
                 {
-                    Console.WriteLine($"inPort and incomingPort are not equal for router {routerName}.");
-                    return;
+                    ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, -"];
                 }
-                // tutaj np. jest R3. Tam moze byc lub nie poppedLabel, ale znowu - przez nasze tablice to nic nie wnosi,
-                // czy poppedLabel jest.
-                if (ilmEntry.poppedLabel != null)
+                else
                 {
-                    Console.WriteLine($"poppedLabel is not null for router {routerName}.");
-                    return;
+                    ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, {poppedLabel}"];
                 }
                 var nhlfeEntry = nhlfeTable.entries[ilmEntry.id];
                 switch(nhlfeEntry.operation)

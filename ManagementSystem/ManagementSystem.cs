@@ -53,10 +53,10 @@ namespace ManagementSystem
             var t = Task.Run(action: () => ListenForConnections());
             //t.Wait();
             Thread.Sleep(1000);
-            handleInput();
+            HandleInput();
         }
 
-        private void handleInput()
+        private void HandleInput()
         {
             while (true)
             {
@@ -82,14 +82,14 @@ namespace ManagementSystem
                     ilmTable = new IlmTable(R1TablesFilePath, routerName);
                     ftnTable = new FtnTable(R1TablesFilePath, routerName);
                     nhlfeTable = new NhlfeTable(R1TablesFilePath, routerName);
-                    manageLER(routerName, R1TablesFilePath);
+                    ManageLER(routerName, R1TablesFilePath);
                 }
                 else if(choice == "2")
                 {
                     string routerName = $"R{choice}";
                     ilmTable = new IlmTable(R2TablesFilePath, routerName);
                     nhlfeTable = new NhlfeTable(R2TablesFilePath, routerName);
-                    manageLSR(routerName, R2TablesFilePath);
+                    ManageLSR(routerName, R2TablesFilePath);
                 }
                 else if(choice == "3")
                 {
@@ -99,7 +99,7 @@ namespace ManagementSystem
                     ilmTable = new IlmTable(R3TablesFilePath, routerName);
                     ftnTable = new FtnTable(R3TablesFilePath, routerName);
                     nhlfeTable = new NhlfeTable(R3TablesFilePath, routerName);
-                    manageLER(routerName, R3TablesFilePath);
+                    ManageLER(routerName, R3TablesFilePath);
                 }
                 else if(choice == "4")
                 {
@@ -109,7 +109,7 @@ namespace ManagementSystem
                     ilmTable = new IlmTable(R4TablesFilePath, routerName);
                     ftnTable = new FtnTable(R4TablesFilePath, routerName);
                     nhlfeTable = new NhlfeTable(R4TablesFilePath, routerName);
-                    manageLER(routerName, R4TablesFilePath);
+                    ManageLER(routerName, R4TablesFilePath);
                 }
                 else
                 {
@@ -119,7 +119,7 @@ namespace ManagementSystem
             }
         }
 
-        private void manageLER(string routerName, string tablesFilePath)
+        private void ManageLER(string routerName, string tablesFilePath)
         {
             Console.WriteLine("\nWhich table would you like to edit?");
             Console.WriteLine("1. MPLS-FIB");
@@ -132,32 +132,32 @@ namespace ManagementSystem
             Console.WriteLine();
             if (choice == "1")
             {
-                manageMPLSFIBTable(routerName, tablesFilePath);
+                ManageMPLSFIBTable(routerName, tablesFilePath);
             }
             else if (choice == "2")
             {
-                manageIPFIBTable(routerName, tablesFilePath);
+                ManageIPFIBTable(routerName, tablesFilePath);
             }
             else if (choice == "3")
             {
-                manageFTNTable(routerName, tablesFilePath);
+                ManageFTNTable(routerName, tablesFilePath);
             }
             else if (choice == "4")
             {
-                manageNHLFETable(routerName, tablesFilePath);
+                ManageNHLFETable(routerName, tablesFilePath);
             }
             else if (choice == "5")
             {
-                manageILMTable(routerName, tablesFilePath);
+                ManageILMTable(routerName, tablesFilePath);
             }
             else
             {
                 Console.WriteLine("There is no such table. Try again.");
-                manageLER(routerName, tablesFilePath);
+                ManageLER(routerName, tablesFilePath);
             }
         }
 
-        private void manageLSR(string routerName, string tablesFilePath)
+        private void ManageLSR(string routerName, string tablesFilePath)
         {
             Console.WriteLine("\nWhich table would you like to edit?");
             Console.WriteLine("1. NHLFE");
@@ -167,20 +167,20 @@ namespace ManagementSystem
             Console.WriteLine();
             if (choice == "1")
             {
-                manageNHLFETable(routerName, tablesFilePath);
+                ManageNHLFETable(routerName, tablesFilePath);
             }
             else if (choice == "2")
             {
-                manageILMTable(routerName, tablesFilePath);
+                ManageILMTable(routerName, tablesFilePath);
             }
             else
             {
                 Console.WriteLine("\nThere is no such table. Try again.");
-                manageLSR(routerName, tablesFilePath);
+                ManageLSR(routerName, tablesFilePath);
             }
         }
 
-        private void manageMPLSFIBTable(string routerName, string tablesFilePath)
+        private void ManageMPLSFIBTable(string routerName, string tablesFilePath)
         {
             mplsFibTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -193,12 +193,12 @@ namespace ManagementSystem
                 if (splitInput.Length != 2 && routerName == "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else if (splitInput.Length != 2 && routerName != "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
                 mplsFibTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]));
                 mplsFibTable.PrintEntries();
@@ -219,16 +219,16 @@ namespace ManagementSystem
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 } 
                 else
                 {
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
             }
         }
 
-        private void manageIPFIBTable(string routerName, string tablesFilePath)
+        private void ManageIPFIBTable(string routerName, string tablesFilePath)
         {
             ipFibTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -241,12 +241,12 @@ namespace ManagementSystem
                 if (splitInput.Length != 2 && routerName == "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else if (splitInput.Length != 2 && routerName != "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
                 ipFibTable.AddRowToTable(tablesFilePath, routerName, splitInput[0], int.Parse(splitInput[1]));
                 ipFibTable.PrintEntries();
@@ -267,16 +267,16 @@ namespace ManagementSystem
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else
                 {
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
             }
         }
 
-        private void manageFTNTable(string routerName, string tablesFilePath)
+        private void ManageFTNTable(string routerName, string tablesFilePath)
         {
             ftnTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -289,12 +289,12 @@ namespace ManagementSystem
                 if (splitInput.Length != 2 && routerName == "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else if (splitInput.Length != 2 && routerName != "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
                 ftnTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]));
                 ftnTable.PrintEntries();
@@ -315,16 +315,16 @@ namespace ManagementSystem
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else
                 {
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
             }
         }
 
-        private void manageILMTable(string routerName, string tablesFilePath)
+        private void ManageILMTable(string routerName, string tablesFilePath)
         {
             ilmTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -337,12 +337,12 @@ namespace ManagementSystem
                 if (splitInput.Length != 4 && routerName == "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else if (splitInput.Length != 4 && routerName != "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
                 if (splitInput[2] == "-")
                 {
@@ -362,7 +362,7 @@ namespace ManagementSystem
             }
             else if (choice == "2")
             {
-                Console.WriteLine("\nWhich key in dictionary would you like to remove?");
+                Console.WriteLine("\nWhich key in dictionary would you like to remove? The key format is as follows: inLabel, inPort, poppedLabel");
                 string row = Console.ReadLine();
                 ilmTable.DeleteRowFromTable(row, tablesFilePath);
                 ilmTable.PrintEntries();
@@ -372,16 +372,16 @@ namespace ManagementSystem
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else
                 {
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
             }
         }
 
-        private void manageNHLFETable(string routerName, string tablesFilePath)
+        private void ManageNHLFETable(string routerName, string tablesFilePath)
         {
             nhlfeTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -394,12 +394,12 @@ namespace ManagementSystem
                 if (splitInput.Length != 5 && routerName == "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else if (splitInput.Length != 5 && routerName != "R2")
                 {
                     Console.WriteLine("Invalid number of arguments entered.");
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
                 if (splitInput[2] == "-" && splitInput[3] == "-" && splitInput[4] == "-")
                 {
@@ -434,11 +434,11 @@ namespace ManagementSystem
                     Console.WriteLine("Invalid NHLFE entry.");
                     if (routerName == "R2")
                     {
-                        manageLSR(routerName, tablesFilePath);
+                        ManageLSR(routerName, tablesFilePath);
                     }
                     else
                     {
-                        manageLER(routerName, tablesFilePath);
+                        ManageLER(routerName, tablesFilePath);
                     }
                 }
                 nhlfeTable.PrintEntries();
@@ -457,11 +457,11 @@ namespace ManagementSystem
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
-                    manageLSR(routerName, tablesFilePath);
+                    ManageLSR(routerName, tablesFilePath);
                 }
                 else
                 {
-                    manageLER(routerName, tablesFilePath);
+                    ManageLER(routerName, tablesFilePath);
                 }
             }
 
@@ -530,7 +530,7 @@ namespace ManagementSystem
                     }
                     catch
                     {
-                        // Skip adding if such key already exists -> the router is reconnecting.
+                        Logs.ShowLog(LogType.CONNECTED, $"Router {receivedPackage.sourceName} reconnected.");
                     }
                     SendResponse(handler, content);
                 }
