@@ -22,22 +22,22 @@ namespace Host
     class Host
     {
         private Socket cableCloudSocket;
-        private static string hostName;
-        private static int hostPort;
-        private static IPAddress destAddress;
-        private static IPAddress ipSourceAddress;
-        private static int h1Port;
-        private static IPAddress ipAddressH1;
-        private static int h2Port;
-        private static IPAddress ipAddressH2;
-        private static int h3Port;
-        private static IPAddress ipAddressH3;
-        private static int h4Port;
-        private static IPAddress ipAddressH4;
-        private static int cableCloudPort;
-        private static int destinationPort;
-        private static IPAddress cableCloudIpAddress;
-        private static ManualResetEvent allDone = new ManualResetEvent(false);
+        private string hostName;
+        private int hostPort;
+        private IPAddress destAddress;
+        private IPAddress ipSourceAddress;
+        private int h1Port;
+        private IPAddress ipAddressH1;
+        private int h2Port;
+        private IPAddress ipAddressH2;
+        private int h3Port;
+        private IPAddress ipAddressH3;
+        private int h4Port;
+        private IPAddress ipAddressH4;
+        private int cableCloudPort;
+        private int destinationPort;
+        private IPAddress cableCloudIpAddress;
+        private ManualResetEvent allDone = new ManualResetEvent(false);
 
         public Host(string filePath)
         {
@@ -222,7 +222,7 @@ namespace Host
             }
         }
 
-        private static void Send(Socket hostSocket, string data)
+        private void Send(Socket hostSocket, string data)
         {
             Package package = new Package(hostName, hostPort, destAddress.ToString(), destinationPort, data);
             string json = SerializeToJson(package);
@@ -232,7 +232,7 @@ namespace Host
                 new AsyncCallback(SendCallback), hostSocket);
         }
 
-        private static void SendCallback(IAsyncResult ar)
+        private void SendCallback(IAsyncResult ar)
         {
             try
             {
