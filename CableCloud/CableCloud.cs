@@ -120,12 +120,12 @@ namespace CableCloud
                 }
                 else
                 {
-                    Logs.ShowLog(LogType.INFO, ("Read {" + content.Length.ToString() + "} bytes from " + tunnels[package.incomingPort].incomingObject + "\n Data : " + content +"\n"));
+                    Logs.ShowLog(LogType.INFO, ("Read {" + content.Length.ToString() + "} bytes from " + tunnels[package.incomingPort].incomingObject));
                     package.incomingPort = tunnels[package.incomingPort].destinationPort;                    
                     content = SerializeToJson(package);                    
                     //Console.WriteLine("wysylam na router::   " + tunnels[package.incomingPort].incomingObject);
                     Send(connectedSockets[tunnels[package.incomingPort].incomingObject], content); // to jak przesylanie wiadomosci na nowy port
-                    Logs.ShowLog(LogType.INFO, "Sent {" + content.Length.ToString() + "} bytes to " +  tunnels[package.incomingPort].incomingObject + content + "\n");
+                    Logs.ShowLog(LogType.INFO, "Sent {" + content.Length.ToString() + "} bytes to " +  tunnels[package.incomingPort].incomingObject);
                 }
                 state.sb.Clear();
                 handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);               
