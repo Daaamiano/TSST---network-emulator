@@ -51,8 +51,8 @@ namespace Host
             while (true)
             {
                 Task.Run(action: () => ReceiveMessages());
-                Logs.ShowLog(LogType.INFO, "You are host " + hostName);
-                Console.WriteLine("\nWrite '1'  if you want to send the message to another host ");
+                Console.WriteLine("\nYou are host " + hostName);
+                Console.WriteLine("Write '1'  if you want to send the message to another host ");
 
                 int decision = int.Parse(Console.ReadLine());
                 if (decision == 1)
@@ -159,7 +159,7 @@ namespace Host
                 byte[] buffer = new byte[1024];
                 int bytes = cableCloudSocket.Receive(buffer);
                 var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                Logs.ShowLog(LogType.INFO, "Received from cable cloud: {0}" + message); 
+                Logs.ShowLog(LogType.INFO, "Received from cable cloud: \n" + message); 
             }
         }
 
@@ -226,7 +226,7 @@ namespace Host
         {
             Package package = new Package(hostName, hostPort, destAddress.ToString(), destinationPort, data);
             string json = SerializeToJson(package);
-            Logs.ShowLog(LogType.INFO, ("Sending package to cable cloud: \n" + json));
+            Logs.ShowLog(LogType.INFO, ("Sending package to cable cloud."));
             byte[] byteData = Encoding.ASCII.GetBytes(json);
             hostSocket.BeginSend(byteData, 0, byteData.Length, 0,
                 new AsyncCallback(SendCallback), hostSocket);
