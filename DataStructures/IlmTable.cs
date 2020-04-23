@@ -8,7 +8,7 @@ namespace DataStructures
     {
         // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę,
         // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
-        // Kluczem jest inLabel.
+        // Kluczem jest string złożony z inLabel, inPort i poppedLabel.
         public Dictionary<string, IlmEntry> entries = new Dictionary<string, IlmEntry>();
 
         public IlmTable(string configFilePath, string routerName)

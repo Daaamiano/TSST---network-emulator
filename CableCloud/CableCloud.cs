@@ -100,7 +100,6 @@ namespace CableCloud
                 int read = handler.EndReceive(ar);
                 state.sb.Append(Encoding.ASCII.GetString(state.buffer, 0, read));
                 var content = state.sb.ToString();                
-               // Logs.ShowLog(LogType.INFO, ("Read {" + content.Length.ToString() + "} bytes from socket. \n Data : " + content));
                 package = DeserializeFromJson(content);               
 
                 if (package.message == "CONNECTED")
@@ -109,22 +108,19 @@ namespace CableCloud
                     try
                     {
                         connectedSockets.Add(package.sourceName, handler);
-                        //Console.WriteLine("dodano do tablicy socket: " + package.sourceName);                        
                     }
                     catch
                     {
                         Logs.ShowLog(LogType.CONNECTED, $"Router {package.sourceName} reconnected.");
                     }
                     Send(handler, content);
-                    //handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
                 else
                 {
                     Logs.ShowLog(LogType.INFO, ("Read {" + content.Length.ToString() + "} bytes from " + tunnels[package.incomingPort].incomingObject));
                     package.incomingPort = tunnels[package.incomingPort].destinationPort;                    
                     content = SerializeToJson(package);                    
-                    //Console.WriteLine("wysylam na router::   " + tunnels[package.incomingPort].incomingObject);
-                    Send(connectedSockets[tunnels[package.incomingPort].incomingObject], content); // to jak przesylanie wiadomosci na nowy port
+                    Send(connectedSockets[tunnels[package.incomingPort].incomingObject], content);
                     Logs.ShowLog(LogType.INFO, "Sent {" + content.Length.ToString() + "} bytes to " +  tunnels[package.incomingPort].incomingObject);
                 }
                 state.sb.Clear();
@@ -165,7 +161,6 @@ namespace CableCloud
             {
                 Socket handler = (Socket)ar.AsyncState;
                 int sent = handler.EndSend(ar);
-                //Logs.ShowLog(LogType.INFO, "Sent {" + sent.ToString() + "} bytes to client");
             }
             catch (Exception e)
             {

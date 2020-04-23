@@ -1,5 +1,4 @@
-﻿using System;
-
+﻿
 namespace DataStructures
 {
     public struct MplsFibEntry

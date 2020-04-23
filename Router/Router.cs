@@ -79,7 +79,6 @@ namespace Router
                 }
                 catch (Exception)
                 {
-                    //Console.WriteLine(e.Source);
                     Logs.ShowLog(LogType.INFO, "Connection to cable cloud lost.");
                 }
             }
@@ -117,7 +116,6 @@ namespace Router
                 }
                 catch (Exception)
                 {
-                    //Console.WriteLine(e.Source);
                     Logs.ShowLog(LogType.INFO, "Connection to management system lost.");
                 }
             }
@@ -141,7 +139,7 @@ namespace Router
                     poppedLabel = 0;
                     Logs.ShowLog(LogType.INFO, "Sent routed package to cable cloud.");
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     Logs.ShowLog(LogType.ERROR, "Couldn't perform routing.");
                 }
@@ -170,18 +168,12 @@ namespace Router
 
         private Package ReceiveMessageFrom(Socket socket)
         {
-            //try
-            //{
-                byte[] buffer = new byte[1024];
-                int bytes = socket.Receive(buffer);
-                var message = Encoding.ASCII.GetString(buffer, 0, bytes);
-                Package receivedPackage = DeserializeFromJson(message);
-                return receivedPackage;
-            //}
-            //catch
-            //{
-            //    return new Package();
-            //}
+            byte[] buffer = new byte[1024];
+            int bytes = socket.Receive(buffer);
+            var message = Encoding.ASCII.GetString(buffer, 0, bytes);
+            Package receivedPackage = DeserializeFromJson(message);
+            return receivedPackage;
+
         }
 
         private void LoadPropertiesFromFile(string configFilePath)

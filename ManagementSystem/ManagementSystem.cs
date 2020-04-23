@@ -656,6 +656,5 @@ namespace ManagementSystem
             package = JsonSerializer.Deserialize<Package>(serializedString);
             return package;
         }
-
     }
 }

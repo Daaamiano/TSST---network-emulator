@@ -53,8 +53,8 @@ namespace Host
                 Task.Run(action: () => ReceiveMessages());
                 Console.WriteLine("Write '1'  if you want to send the message to another host ");
 
-                int decision = int.Parse(Console.ReadLine());
-                if (decision == 1)
+                string decision = Console.ReadLine();
+                if (decision == "1")
                 {
                     try
                     {
@@ -98,10 +98,9 @@ namespace Host
                 else
                 {
                     Logs.ShowLog(LogType.ERROR, "You wrote something other than '1' ");
-                    Console.WriteLine("Please try again: ");
+                    Console.WriteLine("Please try again.\n");
                 }
             }
-
         }
 
         private void ConnectToCableCloud()

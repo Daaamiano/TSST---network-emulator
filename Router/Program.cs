@@ -1,4 +1,5 @@
-﻿namespace Router
+﻿
+namespace Router
 {
     class Program
     {
