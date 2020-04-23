@@ -55,7 +55,7 @@ namespace DataStructures
                     file.WriteLine(routerName + "_ILM, {0}, {1}, {2}, {3}", inLabelAdd, inPortAdd, poppedLabelAdd, idAdd);
                 }
             }
-            Logs.ShowLog(LogType.INFO, $"\nSaved{routerName}ILM table to file.\n");
+            Logs.ShowLog(LogType.INFO, $"\nSaved {routerName} ILM table to file.\n");
         }
 
         public void DeleteRowFromTable(string row, string tablePath)

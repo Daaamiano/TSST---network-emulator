@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -133,14 +134,15 @@ namespace Router
             {
                 try
                 {
-                    Logs.ShowLog(LogType.INFO, "Received a package from cable cloud.");
+                    Logs.ShowLog(LogType.INFO, "Received a package from cable cloud:");
+                    Console.WriteLine(SerializeToJson(receivedPackage));
                     Route(receivedPackage);
                     SendPackageToCloud(receivedPackage);
                     poppedLabel = 0;
                     Logs.ShowLog(LogType.INFO, "Sent routed package to cable cloud.");
                 }
                 catch (Exception)
-                {
+                { 
                     Logs.ShowLog(LogType.ERROR, "Couldn't perform routing.");
                 }
             }
@@ -271,19 +273,20 @@ namespace Router
                 package.labels.RemoveAt(package.labels.Count - 1);
                 if (package.labels.Any())
                 {
+                    
                     IlmEntry ilmEntry;
                     ilmEntry = ilmTable.entries[$"{package.labels.Last()}, {package.incomingPort}, {poppedLabel}"];
                     var newNhlfeEntry = nhlfeTable.entries[ilmEntry.id];
                     switch (newNhlfeEntry.operation)
                     {
                         case "PUSH":
-                            PushLabel(package, nhlfeEntry);
+                            PushLabel(package, newNhlfeEntry);
                             break;
                         case "POP":
-                            PopLabel(package, nhlfeEntry);
+                            PopLabel(package, newNhlfeEntry);
                             break;
                         case "SWAP":
-                            SwapLabel(package, nhlfeEntry);
+                            SwapLabel(package, newNhlfeEntry);
                             break;
                     }
                 }
