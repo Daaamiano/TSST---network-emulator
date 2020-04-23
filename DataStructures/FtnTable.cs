@@ -36,7 +36,7 @@ namespace DataStructures
             entries.Add(fecAdd, new FtnEntry(idAdd));
             using (StreamWriter file = new StreamWriter(tablePath, true))
             {
-                file.WriteLine(routerName + "_ILM, {0}, {1}", fecAdd, idAdd);
+                file.WriteLine(routerName + "_FTN, {0}, {1}", fecAdd, idAdd);
             }
 
             Console.WriteLine($"\nSaved {routerName} FTN table to file.\n");

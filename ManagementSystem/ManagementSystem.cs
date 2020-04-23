@@ -54,6 +54,7 @@ namespace ManagementSystem
             //t.Wait();
             Thread.Sleep(1000);
             HandleInput();
+            Console.ReadLine();
         }
 
         private void HandleInput()
@@ -133,6 +134,7 @@ namespace ManagementSystem
             if (choice == "1")
             {
                 ManageMPLSFIBTable(routerName, tablesFilePath);
+                
             }
             else if (choice == "2")
             {
@@ -181,6 +183,9 @@ namespace ManagementSystem
         }
 
         private void ManageMPLSFIBTable(string routerName, string tablesFilePath)
+
+
+
         {
             mplsFibTable.PrintEntries();
             Console.WriteLine("\nType '1' to add or '2' to delete.");
@@ -441,7 +446,7 @@ namespace ManagementSystem
                         ManageLER(routerName, tablesFilePath);
                     }
                 }
-                nhlfeTable.PrintEntries();
+               
             }
             else if (choice == "2")
             {

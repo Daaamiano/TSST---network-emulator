@@ -22,7 +22,7 @@ namespace DataStructures
             foreach (var row in File.ReadAllLines(configFilePath))
             {
                 var splitRow = row.Split(", ");
-                if (splitRow[0] != rowName)
+                if (splitRow[0] != rowName || splitRow.Length<4)
                 {
                     continue;
                 }
