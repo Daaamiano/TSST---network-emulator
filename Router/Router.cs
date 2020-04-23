@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -144,8 +143,6 @@ namespace Router
                 }
                 catch (Exception e)
                 {
-                    var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
-                    Console.WriteLine(exceptionTrace);
                     Logs.ShowLog(LogType.ERROR, "Couldn't perform routing.");
                 }
             }

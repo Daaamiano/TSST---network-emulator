@@ -41,7 +41,7 @@ namespace CableCloud
 
         public CableCloud(string configFilePath)
         {
-            Console.Title = "CableCloud";
+            Console.Title = "Cable Cloud";
             LoadTunnels(configFilePath);
             Start(5001);
         }

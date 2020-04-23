@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -41,7 +39,7 @@ namespace ManagementSystem
 
         public ManagementSystem(string r1Path, string r2Path, string r3Path, string r4Path)
         {
-            Console.Title = "ManagementSystem";
+            Console.Title = "Management System";
             R1TablesFilePath = r1Path;
             R2TablesFilePath = r2Path;
             R3TablesFilePath = r3Path;
@@ -51,7 +49,6 @@ namespace ManagementSystem
         public void Start()
         {
             var t = Task.Run(action: () => ListenForConnections());
-            //t.Wait();
             Thread.Sleep(1000);
             HandleInput();
             Console.ReadLine();
@@ -128,7 +125,7 @@ namespace ManagementSystem
             Console.WriteLine("3. FTN");
             Console.WriteLine("4. NHLFE");
             Console.WriteLine("5. ILM");
-            Console.WriteLine("\nType a number from 1 to 5");
+            Console.WriteLine("\nType a number from '1' to '5' to choose a table, '0' to go back:");
             string choice = Console.ReadLine();
             Console.WriteLine();
             if (choice == "1")
@@ -152,6 +149,10 @@ namespace ManagementSystem
             {
                 ManageILMTable(routerName, tablesFilePath);
             }
+            else if (choice == "0")
+            {
+                HandleInput();
+            }
             else
             {
                 Console.WriteLine("There is no such table. Try again.");
@@ -164,7 +165,7 @@ namespace ManagementSystem
             Console.WriteLine("\nWhich table would you like to edit?");
             Console.WriteLine("1. NHLFE");
             Console.WriteLine("2. ILM");
-            Console.WriteLine("Type a number from 1 to 2");
+            Console.WriteLine("Type a number from '1' to '2' to choose a table, '0' to go back:");
             string choice = Console.ReadLine();
             Console.WriteLine();
             if (choice == "1")
@@ -175,6 +176,10 @@ namespace ManagementSystem
             {
                 ManageILMTable(routerName, tablesFilePath);
             }
+            else if (choice == "0")
+            {
+                HandleInput();
+            }
             else
             {
                 Console.WriteLine("\nThere is no such table. Try again.");
@@ -183,12 +188,9 @@ namespace ManagementSystem
         }
 
         private void ManageMPLSFIBTable(string routerName, string tablesFilePath)
-
-
-
         {
             mplsFibTable.PrintEntries();
-            Console.WriteLine("\nType '1' to add or '2' to delete.");
+            Console.WriteLine("\nType '1' to add or '2' to delete, '0' to go back:");
             string choice = Console.ReadLine();
             if (choice == "1")
             {
@@ -219,13 +221,24 @@ namespace ManagementSystem
                 Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
                 SendMessage(routerName, updateTablePackage);
             }
+            else if (choice == "0")
+            {
+                if (routerName == "R2")
+                {
+                    ManageLSR(routerName, tablesFilePath);
+                }
+                else
+                {
+                    ManageLER(routerName, tablesFilePath);
+                }
+            }
             else
             {
                 Console.WriteLine("Wrong command number.");
                 if (routerName == "R2")
                 {
                     ManageLSR(routerName, tablesFilePath);
-                } 
+                }
                 else
                 {
                     ManageLER(routerName, tablesFilePath);
@@ -236,7 +249,7 @@ namespace ManagementSystem
         private void ManageIPFIBTable(string routerName, string tablesFilePath)
         {
             ipFibTable.PrintEntries();
-            Console.WriteLine("\nType '1' to add or '2' to delete.");
+            Console.WriteLine("\nType '1' to add or '2' to delete, '0' to go back:");
             string choice = Console.ReadLine();
             if (choice == "1")
             {
@@ -267,6 +280,17 @@ namespace ManagementSystem
                 Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
                 SendMessage(routerName, updateTablePackage);
             }
+            else if (choice == "0")
+            {
+                if (routerName == "R2")
+                {
+                    ManageLSR(routerName, tablesFilePath);
+                }
+                else
+                {
+                    ManageLER(routerName, tablesFilePath);
+                }
+            }
             else
             {
                 Console.WriteLine("Wrong command number.");
@@ -284,7 +308,7 @@ namespace ManagementSystem
         private void ManageFTNTable(string routerName, string tablesFilePath)
         {
             ftnTable.PrintEntries();
-            Console.WriteLine("\nType '1' to add or '2' to delete.");
+            Console.WriteLine("\nType '1' to add or '2' to delete, '0' to go back:");
             string choice = Console.ReadLine();
             if (choice == "1")
             {
@@ -315,6 +339,17 @@ namespace ManagementSystem
                 Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
                 SendMessage(routerName, updateTablePackage);
             }
+            else if (choice == "0")
+            {
+                if (routerName == "R2")
+                {
+                    ManageLSR(routerName, tablesFilePath);
+                }
+                else
+                {
+                    ManageLER(routerName, tablesFilePath);
+                }
+            }
             else
             {
                 Console.WriteLine("Wrong command number.");
@@ -332,7 +367,7 @@ namespace ManagementSystem
         private void ManageILMTable(string routerName, string tablesFilePath)
         {
             ilmTable.PrintEntries();
-            Console.WriteLine("\nType '1' to add or '2' to delete.");
+            Console.WriteLine("\nType '1' to add or '2' to delete, '0' to go back:");
             string choice = Console.ReadLine();
             if (choice == "1")
             {
@@ -372,6 +407,17 @@ namespace ManagementSystem
                 ilmTable.DeleteRowFromTable(row, tablesFilePath);
                 ilmTable.PrintEntries();
             }
+            else if (choice == "0")
+            {
+                if (routerName == "R2")
+                {
+                    ManageLSR(routerName, tablesFilePath);
+                }
+                else
+                {
+                    ManageLER(routerName, tablesFilePath);
+                }
+            }
             else
             {
                 Console.WriteLine("Wrong command number.");
@@ -389,7 +435,7 @@ namespace ManagementSystem
         private void ManageNHLFETable(string routerName, string tablesFilePath)
         {
             nhlfeTable.PrintEntries();
-            Console.WriteLine("\nType '1' to add or '2' to delete.");
+            Console.WriteLine("\nType '1' to add or '2' to delete, '0' to go back:");
             string choice = Console.ReadLine();
             if (choice == "1")
             {
@@ -456,6 +502,17 @@ namespace ManagementSystem
                 nhlfeTable.PrintEntries();
                 Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
                 SendMessage(routerName, updateTablePackage);
+            }
+            else if (choice == "0")
+            {
+                if (routerName == "R2")
+                {
+                    ManageLSR(routerName, tablesFilePath);
+                }
+                else
+                {
+                    ManageLER(routerName, tablesFilePath);
+                }
             }
             else
             {
@@ -549,8 +606,6 @@ namespace ManagementSystem
             }
             catch(Exception e)
             {
-                //var exceptionTrace = new StackTrace(e).GetFrame(0).GetMethod().Name;
-                //Console.WriteLine(exceptionTrace);
                 var myKey = connectedSockets.FirstOrDefault(x => x.Value == handler).Key;
                 Logs.ShowLog(LogType.INFO, $"Connection with {myKey} lost.");
                 handler.Shutdown(SocketShutdown.Both);

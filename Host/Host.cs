@@ -51,7 +51,6 @@ namespace Host
             while (true)
             {
                 Task.Run(action: () => ReceiveMessages());
-                Console.WriteLine("\nYou are host " + hostName);
                 Console.WriteLine("Write '1'  if you want to send the message to another host ");
 
                 int decision = int.Parse(Console.ReadLine());
