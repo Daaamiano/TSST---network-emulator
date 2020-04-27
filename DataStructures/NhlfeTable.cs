@@ -10,14 +10,20 @@ namespace DataStructures
         // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
         // Kluczem jest ID.
         public Dictionary<int, NhlfeEntry> entries = new Dictionary<int, NhlfeEntry>();
+        private string rowName;
+
+        public NhlfeTable(string routerName)
+        {
+            rowName = routerName + "_NHLFE";
+        }
 
         public NhlfeTable(string configFilePath, string routerName)
         {
-            string rowName = routerName + "_NHLFE";
-            LoadTableFromFile(configFilePath, rowName);
+            rowName = routerName + "_NHLFE";
+            LoadTableFromFile(configFilePath);
         }
 
-        private void LoadTableFromFile(string configFilePath, string rowName)
+        private void LoadTableFromFile(string configFilePath)
         {
             foreach (var row in File.ReadAllLines(configFilePath))
             {
@@ -36,6 +42,42 @@ namespace DataStructures
                     var entry = new NhlfeEntry(splitRow[2], null, int.Parse(splitRow[4]), int.Parse(splitRow[5]));
                     entries.Add(int.Parse(splitRow[1]), entry);
                 } 
+                else if (splitRow[4] == "-")
+                {
+                    var entry = new NhlfeEntry(splitRow[2], int.Parse(splitRow[3]), null, int.Parse(splitRow[5]));
+                    entries.Add(int.Parse(splitRow[1]), entry);
+                }
+                else if (splitRow[5] == "-")
+                {
+                    var entry = new NhlfeEntry(splitRow[2], int.Parse(splitRow[3]), int.Parse(splitRow[4]), null);
+                    entries.Add(int.Parse(splitRow[1]), entry);
+                }
+                else
+                {
+                    Console.WriteLine("Unknown NHLFE entry.");
+                }
+            }
+        }
+
+        public void LoadTable(List<string> tables)
+        {
+            foreach (var row in tables)
+            {
+                var splitRow = row.Split(", ");
+                if (splitRow[0] != rowName)
+                {
+                    continue;
+                }
+                if (splitRow[3] == "-" && splitRow[4] == "-" && splitRow[5] == "-")
+                {
+                    var entry = new NhlfeEntry(splitRow[2], null, null, null);
+                    entries.Add(int.Parse(splitRow[1]), entry);
+                }
+                else if (splitRow[3] == "-")
+                {
+                    var entry = new NhlfeEntry(splitRow[2], null, int.Parse(splitRow[4]), int.Parse(splitRow[5]));
+                    entries.Add(int.Parse(splitRow[1]), entry);
+                }
                 else if (splitRow[4] == "-")
                 {
                     var entry = new NhlfeEntry(splitRow[2], int.Parse(splitRow[3]), null, int.Parse(splitRow[5]));

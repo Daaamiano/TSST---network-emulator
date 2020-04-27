@@ -10,6 +10,7 @@ namespace DataStructures
         public int destPort { get; set; }
         public List<int> labels { get; set; }
         public string message { get; set; }
+        public List<string> tablesFile { get; set; }
 
         public Package()
         {
@@ -19,6 +20,7 @@ namespace DataStructures
             destPort = 0;
             labels = new List<int>();
             message = "";
+            tablesFile = new List<string>();
         }
 
         public Package(string sourceName, string destAddress, int destPort, string message)
@@ -29,6 +31,7 @@ namespace DataStructures
             this.destPort = destPort;
             labels = new List<int>();
             this.message = message;
+            tablesFile = new List<string>();
         }
 
         public Package(string sourceName, int incomingPort, string destAddress, int destPort, string message)
@@ -39,6 +42,14 @@ namespace DataStructures
             this.destPort = destPort;
             labels = new List<int>();
             this.message = message;
+            tablesFile = new List<string>();
+        }
+
+        public Package(string sourceName, string message, List<string> tablesFile)
+        {
+            this.sourceName = sourceName;
+            this.message = message;
+            this.tablesFile = tablesFile;
         }
     }
 }

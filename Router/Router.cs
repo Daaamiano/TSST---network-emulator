@@ -30,14 +30,11 @@ namespace Router
         private FtnTable ftnTable;
         private NhlfeTable nhlfeTable;
 
-        private string routerTablesFilePath;
         private int poppedLabel = 0;
 
-        public Router(string routerConfigFilePath, string tablesConfigFilePath)
+        public Router(string routerConfigFilePath)
         {
-            routerTablesFilePath = tablesConfigFilePath;
             LoadPropertiesFromFile(routerConfigFilePath);
-            LoadTablesFromFile(tablesConfigFilePath);
             Console.Title = $"{routerName}";
         }
 
@@ -68,7 +65,7 @@ namespace Router
 
                 try
                 {
-                    Console.WriteLine("Sending CONNECTED to cable cloud...");
+                    Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
                     Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
                     string connectedMessage = "CONNECTED";
                     Package connectedCheckPackage = new Package(routerName, cloudAddress.ToString(), cloudPort, connectedMessage);
@@ -78,8 +75,9 @@ namespace Router
                         HandleMessageFromCloud();
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Console.WriteLine(e.ToString());
                     Logs.ShowLog(LogType.INFO, "Connection to cable cloud lost.");
                 }
             }
@@ -115,8 +113,9 @@ namespace Router
                         HandleResponseFromMS();
                     }
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Console.WriteLine(e.ToString());
                     Logs.ShowLog(LogType.INFO, "Connection to management system lost.");
                 }
             }
@@ -155,27 +154,26 @@ namespace Router
 
             if (receivedPackage.message == "CONNECTED")
             {
-                Logs.ShowLog(LogType.INFO, "Connected to management system.");
+                Logs.ShowLog(LogType.CONNECTED, "Connected to management system.");
             }
-            else if (receivedPackage.message == "RELOAD TABLES")
+            else if (receivedPackage.message == "SENDING-TABLES")
             {
-                Logs.ShowLog(LogType.INFO, "Received RELOAD TABLES command from MS.");
-                LoadTablesFromFile(routerTablesFilePath);
+                Logs.ShowLog(LogType.INFO, "Received tables from MS.");
+                LoadTables(receivedPackage.tablesFile);
             }
             else
             {
-                Console.WriteLine("Received unknown command from MS.");
+                Logs.ShowLog(LogType.ERROR, "Received unknown command from MS.");
             }
         }
 
         private Package ReceiveMessageFrom(Socket socket)
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[5120];
             int bytes = socket.Receive(buffer);
             var message = Encoding.ASCII.GetString(buffer, 0, bytes);
             Package receivedPackage = DeserializeFromJson(message);
             return receivedPackage;
-
         }
 
         private void LoadPropertiesFromFile(string configFilePath)
@@ -192,21 +190,28 @@ namespace Router
             cloudPort = int.Parse(properties["CLOUDPORT"]);
         }
 
-        private void LoadTablesFromFile(string tablesFilePath)
+        private void LoadTables(List<string> tablesFile)
         {
             // Router LSR nie potrzebuje wszystkich tablic. W naszej topologii tylko R2 jest LSR.
             if (routerName != "R2")
             {
-                mplsFibTable = new MplsFibTable(tablesFilePath, routerName);
-                ipFibTable = new IpFibTable(tablesFilePath, routerName);
-                nhlfeTable = new NhlfeTable(tablesFilePath, routerName);
-                ftnTable = new FtnTable(tablesFilePath, routerName);
-                ilmTable = new IlmTable(tablesFilePath, routerName);
+                mplsFibTable = new MplsFibTable(routerName);
+                mplsFibTable.LoadTable(tablesFile);
+                ftnTable = new FtnTable(routerName);
+                ftnTable.LoadTable(tablesFile);
+                ilmTable = new IlmTable(routerName);
+                ilmTable.LoadTable(tablesFile);
+                ipFibTable = new IpFibTable(routerName);
+                ipFibTable.LoadTable(tablesFile);
+                nhlfeTable = new NhlfeTable(routerName);
+                nhlfeTable.LoadTable(tablesFile);
             }
             else
             {
-                nhlfeTable = new NhlfeTable(tablesFilePath, routerName);
-                ilmTable = new IlmTable(tablesFilePath, routerName);
+                ilmTable = new IlmTable(routerName);
+                ilmTable.LoadTable(tablesFile);
+                nhlfeTable = new NhlfeTable(routerName);
+                nhlfeTable.LoadTable(tablesFile);
             }
         }
 
@@ -224,8 +229,7 @@ namespace Router
 
         private Package DeserializeFromJson(string serializedString)
         {
-            Package package = new Package();
-            package = JsonSerializer.Deserialize<Package>(serializedString);
+            Package package = JsonSerializer.Deserialize<Package>(serializedString);
             return package;
         }
 

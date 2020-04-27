@@ -10,16 +10,36 @@ namespace DataStructures
         // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
         // Kluczem jest destPort.
         public Dictionary<int, MplsFibEntry> entries = new Dictionary<int, MplsFibEntry>();
+        private string rowName;
+
+        public MplsFibTable(string routerName)
+        {
+            rowName = routerName + "_MPLSFIB";
+        }
 
         public MplsFibTable(string configFilePath, string routerName)
         {
-            string rowName = routerName + "_MPLSFIB";
-            LoadTableFromFile(configFilePath, rowName);
+            rowName = routerName + "_MPLSFIB";
+            LoadTableFromFile(configFilePath);
         }
 
-        private void LoadTableFromFile(string configFilePath, string rowName)
+        private void LoadTableFromFile(string configFilePath)
         {
             foreach (var row in File.ReadAllLines(configFilePath))
+            {
+                var splitRow = row.Split(", ");
+                if (splitRow[0] != rowName)
+                {
+                    continue;
+                }
+                var entry = new MplsFibEntry(int.Parse(splitRow[2]));
+                entries.Add(int.Parse(splitRow[1]), entry);
+            }
+        }
+
+        public void LoadTable(List<string> tables)
+        {
+            foreach (var row in tables)
             {
                 var splitRow = row.Split(", ");
                 if (splitRow[0] != rowName)

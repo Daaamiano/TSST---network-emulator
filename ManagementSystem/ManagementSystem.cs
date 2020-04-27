@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,7 +15,7 @@ namespace ManagementSystem
     class StateObject
     {
         public Socket workSocket = null;
-        public const int BufferSize = 1024;
+        public const int BufferSize = 2048;
         public byte[] buffer = new byte[BufferSize];
         public StringBuilder sb = new StringBuilder();
     }
@@ -68,7 +69,7 @@ namespace ManagementSystem
                 {
                     Console.ReadKey(false);
                 }
-                
+
                 Console.WriteLine("\nChoose which router you want to manage: \n1. R1 \n2. R2 \n3. R3 \n4. R4");
                 var choice = Console.ReadLine();
 
@@ -82,14 +83,14 @@ namespace ManagementSystem
                     nhlfeTable = new NhlfeTable(R1TablesFilePath, routerName);
                     ManageLER(routerName, R1TablesFilePath);
                 }
-                else if(choice == "2")
+                else if (choice == "2")
                 {
                     string routerName = $"R{choice}";
                     ilmTable = new IlmTable(R2TablesFilePath, routerName);
                     nhlfeTable = new NhlfeTable(R2TablesFilePath, routerName);
                     ManageLSR(routerName, R2TablesFilePath);
                 }
-                else if(choice == "3")
+                else if (choice == "3")
                 {
                     string routerName = $"R{choice}";
                     mplsFibTable = new MplsFibTable(R3TablesFilePath, routerName);
@@ -99,7 +100,7 @@ namespace ManagementSystem
                     nhlfeTable = new NhlfeTable(R3TablesFilePath, routerName);
                     ManageLER(routerName, R3TablesFilePath);
                 }
-                else if(choice == "4")
+                else if (choice == "4")
                 {
                     string routerName = $"R{choice}";
                     mplsFibTable = new MplsFibTable(R4TablesFilePath, routerName);
@@ -131,7 +132,7 @@ namespace ManagementSystem
             if (choice == "1")
             {
                 ManageMPLSFIBTable(routerName, tablesFilePath);
-                
+
             }
             else if (choice == "2")
             {
@@ -209,8 +210,7 @@ namespace ManagementSystem
                 }
                 mplsFibTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]));
                 mplsFibTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "2")
             {
@@ -218,8 +218,7 @@ namespace ManagementSystem
                 string row = Console.ReadLine();
                 mplsFibTable.DeleteRowFromTable(row, tablesFilePath);
                 mplsFibTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "0")
             {
@@ -268,8 +267,7 @@ namespace ManagementSystem
                 }
                 ipFibTable.AddRowToTable(tablesFilePath, routerName, splitInput[0], int.Parse(splitInput[1]));
                 ipFibTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "2")
             {
@@ -277,8 +275,7 @@ namespace ManagementSystem
                 string row = Console.ReadLine();
                 ipFibTable.DeleteRowFromTable(row, tablesFilePath);
                 ipFibTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "0")
             {
@@ -327,8 +324,7 @@ namespace ManagementSystem
                 }
                 ftnTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]));
                 ftnTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "2")
             {
@@ -336,8 +332,7 @@ namespace ManagementSystem
                 string row = Console.ReadLine();
                 ftnTable.DeleteRowFromTable(row, tablesFilePath);
                 ftnTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "0")
             {
@@ -388,17 +383,15 @@ namespace ManagementSystem
                 {
                     ilmTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]), null, int.Parse(splitInput[3]));
                     ilmTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
                 else
                 {
                     ilmTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), int.Parse(splitInput[1]), int.Parse(splitInput[2]), int.Parse(splitInput[3]));
                     ilmTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
-                
+
             }
             else if (choice == "2")
             {
@@ -406,6 +399,7 @@ namespace ManagementSystem
                 string row = Console.ReadLine();
                 ilmTable.DeleteRowFromTable(row, tablesFilePath);
                 ilmTable.PrintEntries();
+                SendTables(routerName);
             }
             else if (choice == "0")
             {
@@ -456,29 +450,25 @@ namespace ManagementSystem
                 {
                     nhlfeTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), splitInput[1], null, null, null);
                     nhlfeTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
                 else if (splitInput[2] == "-")
                 {
                     nhlfeTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), splitInput[1], null, int.Parse(splitInput[3]), int.Parse(splitInput[4]));
                     nhlfeTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
                 else if (splitInput[3] == "-")
                 {
                     nhlfeTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), splitInput[1], int.Parse(splitInput[2]), null, int.Parse(splitInput[4]));
                     nhlfeTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
                 else if (splitInput[4] == "-")
                 {
                     nhlfeTable.AddRowToTable(tablesFilePath, routerName, int.Parse(splitInput[0]), splitInput[1], int.Parse(splitInput[2]), int.Parse(splitInput[3]), null);
                     nhlfeTable.PrintEntries();
-                    Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                    SendMessage(routerName, updateTablePackage);
+                    SendTables(routerName);
                 }
                 else
                 {
@@ -492,7 +482,7 @@ namespace ManagementSystem
                         ManageLER(routerName, tablesFilePath);
                     }
                 }
-               
+
             }
             else if (choice == "2")
             {
@@ -500,8 +490,7 @@ namespace ManagementSystem
                 string row = Console.ReadLine();
                 nhlfeTable.DeleteRowFromTable(row, tablesFilePath);
                 nhlfeTable.PrintEntries();
-                Package updateTablePackage = new Package("Management System", ipAddress.ToString(), port, "RELOAD TABLES");
-                SendMessage(routerName, updateTablePackage);
+                SendTables(routerName);
             }
             else if (choice == "0")
             {
@@ -575,7 +564,7 @@ namespace ManagementSystem
             handler = state.workSocket;
             Package receivedPackage = new Package();
             try
-            { 
+            {
                 // Read data from the client socket.
                 int bytesRead = handler.EndReceive(ar);
 
@@ -590,11 +579,12 @@ namespace ManagementSystem
                     {
                         connectedSockets.Add(receivedPackage.sourceName, handler);
                     }
-                    catch
+                    catch(Exception e)
                     {
                         Logs.ShowLog(LogType.CONNECTED, $"Router {receivedPackage.sourceName} reconnected.");
                     }
                     SendResponse(handler, content);
+                    SendTables(receivedPackage.sourceName);
                 }
                 else
                 {
@@ -604,10 +594,10 @@ namespace ManagementSystem
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0,
                     new AsyncCallback(ReadCallback), state);
             }
-            catch(Exception e)
+            catch (Exception)
             {
                 var myKey = connectedSockets.FirstOrDefault(x => x.Value == handler).Key;
-                Logs.ShowLog(LogType.INFO, $"Connection with {myKey} lost.");
+                Logs.ShowLog(LogType.ERROR, $"Connection with {myKey} lost.");
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
             }
@@ -616,6 +606,8 @@ namespace ManagementSystem
         private void SendResponse(Socket handler, string data)
         {
             byte[] responseMessage = Encoding.ASCII.GetBytes(data);
+            var myKey = connectedSockets.FirstOrDefault(x => x.Value == handler).Key;
+            Logs.ShowLog(LogType.INFO, $"Sending {responseMessage.Length} bytes to {myKey}.");
             handler.Send(responseMessage);
         }
 
@@ -626,15 +618,17 @@ namespace ManagementSystem
                 var handler = connectedSockets[routerName];
                 string json = SerializeToJson(package);
                 byte[] byteData = Encoding.ASCII.GetBytes(json);
+                Logs.ShowLog(LogType.INFO, $"Sending {byteData.Length} bytes to {routerName}.");
+                Console.WriteLine(json);
                 handler.Send(byteData);
             }
-            catch(KeyNotFoundException)
+            catch (KeyNotFoundException)
             {
                 Logs.ShowLog(LogType.ERROR, $"Router {routerName} is not connected.");
             }
             catch
             {
-                Logs.ShowLog(LogType.ERROR, "Couldn't send message.");
+                Logs.ShowLog(LogType.ERROR, $"Couldn't send message.");
             }
         }
 
@@ -652,9 +646,49 @@ namespace ManagementSystem
 
         public Package DeserializeFromJson(string serializedString)
         {
-            Package package = new Package();
-            package = JsonSerializer.Deserialize<Package>(serializedString);
+            Package package = JsonSerializer.Deserialize<Package>(serializedString);
             return package;
+        }
+
+        private void SendTables(string destination)
+        {
+            var tablesFile = new List<string>();
+            switch (destination)
+            {
+                case "R1":
+                    foreach (var row in File.ReadAllLines(R1TablesFilePath))
+                    {
+                        tablesFile.Add(row);
+                    }
+                    Package package1 = new Package("Management System", "SENDING-TABLES", tablesFile);
+                    SendMessage("R1", package1);
+                    break;
+                case "R2":
+                    foreach (var row in File.ReadAllLines(R2TablesFilePath))
+                    {
+                        tablesFile.Add(row);
+                    }
+                    Package package2 = new Package("Management System", "SENDING-TABLES", tablesFile);
+                    SendMessage("R2", package2);
+                    break;
+                case "R3":
+                    foreach (var row in File.ReadAllLines(R3TablesFilePath))
+                    {
+                        tablesFile.Add(row);
+                    }
+                    Package package3 = new Package("Management System", "SENDING-TABLES", tablesFile);
+                    SendMessage("R3", package3);
+                    break;
+                case "R4":
+                    foreach (var row in File.ReadAllLines(R4TablesFilePath))
+                    {
+                        tablesFile.Add(row);
+                    }
+                    Package package4 = new Package("Management System", "SENDING-TABLES", tablesFile);
+                    SendMessage("R4", package4);
+                    break;
+
+            }
         }
     }
 }

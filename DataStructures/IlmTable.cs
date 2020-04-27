@@ -10,19 +10,40 @@ namespace DataStructures
         // a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
         // Kluczem jest string złożony z inLabel, inPort i poppedLabel.
         public Dictionary<string, IlmEntry> entries = new Dictionary<string, IlmEntry>();
+        private string rowName;
+
+        public IlmTable(string routerName)
+        {
+            rowName = routerName + "_ILM";
+        }
 
         public IlmTable(string configFilePath, string routerName)
         {
-            string rowName = routerName + "_ILM";
-            LoadTableFromFile(configFilePath, rowName);
+            rowName = routerName + "_ILM";
+            LoadTableFromFile(configFilePath);
         }
 
-        private void LoadTableFromFile(string configFilePath, string rowName)
+        private void LoadTableFromFile(string configFilePath)
         {
             foreach (var row in File.ReadAllLines(configFilePath))
             {
                 var splitRow = row.Split(", ");
                 if (splitRow[0] != rowName || splitRow.Length<4)
+                {
+                    continue;
+                }
+                var entry = new IlmEntry(int.Parse(splitRow[4]));
+                var key = splitRow[1] + ", " + splitRow[2] + ", " + splitRow[3];
+                entries.Add(key, entry);
+            }
+        }
+
+        public void LoadTable(List<string> tables)
+        {
+            foreach (var row in tables)
+            {
+                var splitRow = row.Split(", ");
+                if (splitRow[0] != rowName)
                 {
                     continue;
                 }

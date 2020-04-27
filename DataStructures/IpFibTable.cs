@@ -8,16 +8,36 @@ namespace DataStructures
     {
         // Naszym kluczem dla każdej pary w słowniku jest to, po czym przeszukujemy tablicę, a wartością reszta pól (obudowane klasą reprezentującą wpis dla odpowiedniej tablicy).
         public Dictionary<string, IpFibEntry> entries = new Dictionary<string, IpFibEntry>();
+        private string rowName;
+
+        public IpFibTable(string routerName)
+        {
+            rowName = routerName + "_IPFIB";
+        }
 
         public IpFibTable(string configFilePath, string routerName)
         {
-            string rowName = routerName + "_IPFIB";
-            LoadTableFromFile(configFilePath, rowName);
+            rowName = routerName + "_IPFIB";
+            LoadTableFromFile(configFilePath);
         }
 
-        private void LoadTableFromFile(string configFilePath, string rowName)
+        private void LoadTableFromFile(string configFilePath)
         {
             foreach (var row in File.ReadAllLines(configFilePath))
+            {
+                var splitRow = row.Split(", ");
+                if (splitRow[0] != rowName)
+                {
+                    continue;
+                }
+                var entry = new IpFibEntry(int.Parse(splitRow[2]));
+                entries.Add(splitRow[1], entry);
+            }
+        }
+
+        public void LoadTable(List<string> tables)
+        {
+            foreach (var row in tables)
             {
                 var splitRow = row.Split(", ");
                 if (splitRow[0] != rowName)

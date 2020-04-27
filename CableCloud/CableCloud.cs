@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -126,10 +127,10 @@ namespace CableCloud
                 state.sb.Clear();
                 handler.BeginReceive(state.buffer, 0, StateObject.bufferSize, 0, new AsyncCallback(ReadCallback), state);               
             }
-            catch (Exception e)
+            catch (Exception)
             {
-                
-                Logs.ShowLog(LogType.ERROR, "Connection with router lost.");
+                var myKey = connectedSockets.FirstOrDefault(x => x.Value == handler).Key;
+                Logs.ShowLog(LogType.INFO, $"Connection with {myKey} lost.");
                 handler.Shutdown(SocketShutdown.Both);
                 handler.Close();
             }
