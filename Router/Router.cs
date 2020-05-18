@@ -66,7 +66,6 @@ namespace Router
                 try
                 {
                     Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
-                    Logs.ShowLog(LogType.INFO, "Sending CONNECTED to cable cloud...");
                     string connectedMessage = "CONNECTED";
                     Package connectedCheckPackage = new Package(routerName, cloudAddress.ToString(), cloudPort, connectedMessage);
                     cableCloudSocket.Send(Encoding.ASCII.GetBytes(SerializeToJson(connectedCheckPackage)));
